@@ -268,7 +268,7 @@ function syncNavigationUI(menuId) {
     window.dispatchEvent(new Event('resize'));
 }
 
-    }
+    
 
     const btnExportPDF = document.getElementById('btnExportPDF');
     if (btnExportPDF) {
