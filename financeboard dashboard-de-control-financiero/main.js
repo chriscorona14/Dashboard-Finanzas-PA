@@ -167,68 +167,56 @@ async function fetchMasterData(token = null) {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // --- 1. LÓGICA DE PERSISTENCIA Y RECONEXIÓN AUTOMÁTICA ---
+    // --- 1. PERSISTENCIA Y LOGIN SILENCIOSO ---
     if (msalInstance) {
         try {
             await msalInstance.initialize();
-            
-            // Revisamos si ya existe una sesión guardada en localStorage
             const accounts = msalInstance.getAllAccounts();
-            
             if (accounts.length > 0) {
-                console.log("Sesión activa detectada. Intentando login silencioso...");
+                console.log("Sesión activa detectada.");
                 const silentRequest = {
                     scopes: ["User.Read", "Files.Read", "Files.Read.All"],
                     account: accounts[0]
                 };
-                
-                try {
-                    const silentResponse = await msalInstance.acquireTokenSilent(silentRequest);
-                    // Si funciona, descargamos la data real de inmediato
-                    await fetchMasterData(silentResponse.accessToken);
-                } catch (silentError) {
-                    console.warn("Token silencioso falló, cargando con ceros:", silentError);
-                    fetchMasterData();
-                }
+                const silentResponse = await msalInstance.acquireTokenSilent(silentRequest);
+                await fetchMasterData(silentResponse.accessToken);
             } else {
-                // Si no hay cuenta, cargamos el dashboard en blanco (ceros)
-                fetchMasterData();
+                fetchMasterData(); // Carga dashboard vacío
             }
         } catch (error) {
-            console.error("Error en inicialización MSAL:", error);
+            console.error("Error reconexión:", error);
             fetchMasterData();
         }
     }
 
-    // --- 2. SISTEMA DE NAVEGACIÓN ROBUSTO (BARRA LATERAL) ---
+    // --- 2. SISTEMA DE NAVEGACIÓN (NO ONCLICK) ---
     const menuLinks = document.querySelectorAll('.menu-item a');
-    
     menuLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault(); // Evitar recarga de página
-            
+            e.preventDefault();
             const menuId = link.id;
             const targetViewId = menuId.replace('menu-', 'view-');
             const targetView = document.getElementById(targetViewId);
 
             if (targetView) {
-                // Actualizar estados visuales de los links
                 menuLinks.forEach(l => l.classList.remove('active'));
                 document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
-                
                 link.classList.add('active');
                 targetView.classList.add('active');
-
-                // Sincronizar UI (títulos y redimensionar gráficas de D3)
                 syncNavigationUI(menuId);
             }
         });
     });
 
-    // --- 3. LISTENERS DE BOTONES Y SELECTORES ---
+    // --- 3. LISTENERS DE BOTONES ---
     document.getElementById('loginM365Btn')?.addEventListener('click', connectM365);
     document.getElementById('fileInput')?.addEventListener('change', handleFileUpload);
     
+    const btnExportExcel = document.getElementById('btnExportExcel');
+    if (btnExportExcel) btnExportExcel.addEventListener('click', () => {
+        if (globalFinancialData.length) exportToExcelSuite(globalFinancialData);
+    });
+
     if (monthSelector) {
         monthSelector.addEventListener('change', (e) => {
             const index = parseInt(e.target.value);
@@ -236,11 +224,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Iconos de Lucide
     if (typeof lucide !== 'undefined') lucide.createIcons();
 });
 
-// Función de sincronización de UI compartida
 function syncNavigationUI(menuId) {
     const titles = {
         'menu-kpi': "Torre de Control: Indicadores Clave",
@@ -252,414 +238,20 @@ function syncNavigationUI(menuId) {
         'menu-config': "Configuración y Auditoría",
         'menu-glosario': "Glosario Financiero"
     };
-
     const titleLabel = document.getElementById('titleLabel');
-    if (titleLabel && titles[menuId]) {
-        titleLabel.textContent = titles[menuId];
-    }
-    
-    // Visibilidad de controles superiores
+    if (titleLabel && titles[menuId]) titleLabel.textContent = titles[menuId];
     const periodContainer = document.getElementById('periodContainer');
-    if (periodContainer) {
-        periodContainer.style.display = (menuId === 'menu-config' || menuId === 'menu-glosario') ? 'none' : 'flex';
-    }
-
-    // Redimensionar layouts y D3
+    if (periodContainer) periodContainer.style.display = (menuId === 'menu-config' || menuId === 'menu-glosario') ? 'none' : 'flex';
     window.dispatchEvent(new Event('resize'));
 }
 
-    
-
-    const btnExportPDF = document.getElementById('btnExportPDF');
-    if (btnExportPDF) {
-        btnExportPDF.addEventListener('click', () => {
-            if (!globalFinancialData || globalFinancialData.length === 0) {
-                alert('No hay datos para exportar.');
-                return;
-            }
-            
-            const mainContainer = document.querySelector('.main-container');
-            const views = mainContainer.querySelectorAll('.view-container');
-            const headerActions = document.querySelector('.header-actions');
-            const sidebar = document.querySelector('.sidebar');
-            const mobileHeader = document.querySelector('.mobile-header');
-            
-            // Store original state
-            let activeViewId = '';
-            views.forEach(v => {
-                if (v.classList.contains('active')) activeViewId = v.id;
-            });
-            const originalHeaderDisplay = headerActions ? headerActions.style.display : '';
-            const originalSidebarDisplay = sidebar ? sidebar.style.display : '';
-            const originalMobileHeaderDisplay = mobileHeader ? mobileHeader.style.display : '';
-            const originalMainPadding = mainContainer.style.padding;
-            const originalOverflow = mainContainer.style.overflow;
-            
-            // Force charts visibility for PDF
-            const dashboardChartsGrid = document.querySelector('.dashboard-charts-grid');
-            const originalChartsGridDisplay = dashboardChartsGrid ? dashboardChartsGrid.style.display : '';
-            if (dashboardChartsGrid) {
-                dashboardChartsGrid.style.setProperty('display', 'grid', 'important');
-            }
-
-            // Modify DOM for PDF capture
-            if (headerActions) headerActions.style.display = 'none';
-            if (sidebar) sidebar.style.display = 'none';
-            if (mobileHeader) mobileHeader.style.display = 'none';
-            
-            mainContainer.style.padding = '20px';
-            mainContainer.style.overflow = 'visible';
-
-            views.forEach(v => {
-                if (v.id !== 'view-config') {
-                    v.classList.add('active');
-                    v.style.display = 'block';
-                    v.style.pageBreakAfter = 'always';
-                } else {
-                    v.style.display = 'none';
-                }
-            });
-
-            // Trigger resize event to force D3 to redraw if necessary.
-            window.dispatchEvent(new Event('resize'));
-            
-            const opt = {
-                margin:       [0.5, 0.5, 0.5, 0.5],
-                filename:     'Reporte_Planeta_Azul.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 1200 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-
-            // Wait 800ms before generating PDF
-            setTimeout(() => {
-                html2pdf().set(opt).from(mainContainer).save().then(() => {
-                    // Restore original state
-                    if (headerActions) headerActions.style.display = originalHeaderDisplay;
-                    if (sidebar) sidebar.style.display = originalSidebarDisplay;
-                    if (mobileHeader) mobileHeader.style.display = originalMobileHeaderDisplay;
-                    if (dashboardChartsGrid) dashboardChartsGrid.style.display = originalChartsGridDisplay;
-                    
-                    mainContainer.style.padding = originalMainPadding;
-                    mainContainer.style.overflow = originalOverflow;
-                    
-                    views.forEach(v => {
-                        v.style.display = '';
-                        v.style.pageBreakAfter = '';
-                        if (v.id !== activeViewId) {
-                            v.classList.remove('active');
-                        } else {
-                            v.classList.add('active');
-                        }
-                    });
-                    
-                    window.dispatchEvent(new Event('resize'));
-                });
-            }, 800);
-        });
-    }
-
-    const menuToggleBtn = document.getElementById('menuToggleBtn');
-    const sidebar = document.querySelector('.sidebar');
-    if (menuToggleBtn && sidebar) {
-        menuToggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
-    }
-
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileUpload);
-    }
-
-    if (dropZone) {
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = 'var(--primary)';
-            dropZone.style.background = 'rgba(37, 99, 235, 0.05)';
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.style.borderColor = 'rgba(255,255,255,0.2)';
-            dropZone.style.background = 'rgba(255,255,255,0.05)';
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = 'rgba(255,255,255,0.2)';
-            dropZone.style.background = 'rgba(255,255,255,0.05)';
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                handleFileUpload({ target: { files } });
-            }
-        });
-    }
-
-    if (monthSelector) {
-        monthSelector.addEventListener('change', (e) => {
-            const index = parseInt(e.target.value);
-            if (!isNaN(index)) updateUI(globalFinancialData, index);
-        });
-    }
-
-    // Navigation Logic
-    const menuItems = ['menu-kpi', 'menu-resumen', 'menu-pnl', 'menu-balance', 'menu-cashflow', 'menu-estados', 'menu-config', 'menu-glosario'];
-    menuItems.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('click', (e) => {
-                e.preventDefault();
-                // Update active class
-                menuItems.forEach(mId => document.getElementById(mId)?.classList.remove('active'));
-                el.classList.add('active');
-
-                // Switch views
-                document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
-                const viewId = id.replace('menu-', 'view-');
-                document.getElementById(viewId)?.classList.add('active');
-
-                // Close mobile sidebar if open
-                const sidebar = document.querySelector('.sidebar');
-                if (sidebar && window.innerWidth <= 1024) {
-                    sidebar.classList.remove('open');
-                }
-
-                // Update Title
-                const titleLabel = document.getElementById('titleLabel');
-                const titles = {
-                    'menu-kpi': "Torre de Control: Indicadores Clave",
-                    'menu-resumen': "Dashboard de Gestión Corporativa (RD$)",
-                    'menu-pnl': "Estado de Resultados Detallado (RD$)",
-                    'menu-balance': "Balance General Consolidado (RD$)",
-                    'menu-cashflow': "Estado de Flujo de Efectivo (RD$)",
-                    'menu-config': "Configuración y Auditoría",
-                    'menu-estados': "Estados Financieros",
-                    'menu-glosario': "Glosario de Términos y Metodologías Financieras"
-                };
-                if (titles[id]) titleLabel.textContent = titles[id];
-
-                const periodContainer = document.getElementById('periodContainer');
-                if (periodContainer) {
-                    if (id === 'menu-glosario' || id === 'menu-config') {
-                        periodContainer.style.display = 'none';
-                    } else {
-                        periodContainer.style.display = 'flex';
-                    }
-                }
-
-                const searchWrapper = document.getElementById('searchContainerWrapper');
-                if (monthSelector) {
-                    if (id === 'menu-config' || id === 'menu-glosario') {
-                        monthSelector.style.display = 'none';
-                    } else if (globalFinancialData && globalFinancialData.length > 0) {
-                        monthSelector.style.display = 'block';
-                    }
-                }
-                
-                if (searchWrapper) {
-                    const viewsWithSearch = ['menu-resumen', 'menu-pnl', 'menu-balance', 'menu-cashflow', 'menu-estados'];
-                    if (viewsWithSearch.includes(id) && globalFinancialData && globalFinancialData.length > 0) {
-                        searchWrapper.style.display = 'flex';
-                    } else {
-                        searchWrapper.style.display = 'none';
-                    }
-                }
-
-                // Re-render UI so that D3 charts and things calculate dimensions properly
-                // when this view becomes visible.
-                if (globalFinancialData && globalFinancialData.length > 0 && monthSelector) {
-                    const idx = parseInt(monthSelector.value);
-                    if (!isNaN(idx)) updateUI(globalFinancialData, idx);
-                }
-            });
-        }
-    });
-
-    const accountSearch = document.getElementById('accountSearch');
-    if (accountSearch) {
-        accountSearch.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            
-            // Filter desktop tables
-            const tablesToFilter = ['pnlDetailedTable', 'balanceTable', 'covenantTable', 'cashflowTable', 'cfMetricsTable', 'table-estados', 'tableResumenOperativo', 'tableVentasSegmento', 'tableCostosSegmento', 'tableOpex'];
-            tablesToFilter.forEach(tId => {
-                const table = document.getElementById(tId);
-                if (table) {
-                    const rows = table.querySelectorAll('tbody tr');
-                    rows.forEach(tr => {
-                        const firstCell = tr.querySelector('td:first-child');
-                        if (firstCell) {
-                            const accountName = firstCell.textContent.toLowerCase();
-                            if (accountName.includes(query)) {
-                                tr.style.display = '';
-                            } else {
-                                tr.style.display = 'none';
-                            }
-                        }
-                    });
-                }
-            });
-
-            // Filter mobile cards
-            const mobileContainersToFilter = [
-                 'pnlMobileContainer', 'balanceMobileContainer', 'covenantMobileContainer', 
-                 'cashflowMobileContainer', 'cfMetricsMobileContainer', 'estadosMobileContainer',
-                 'resumenOperativoMobileContainer', 'ventasSegmentoMobileContainer', 'costosSegmentoMobileContainer', 'opexMobileContainer'
-            ];
-            mobileContainersToFilter.forEach(cId => {
-                const container = document.getElementById(cId);
-                if (container) {
-                    const cards = container.querySelectorAll('.mobile-vertical-card');
-                    cards.forEach(card => {
-                        const titleEl = card.querySelector('.mobile-vertical-card-title span');
-                        if (titleEl) {
-                            const accountName = titleEl.textContent.toLowerCase();
-                            if (accountName.includes(query)) {
-                                card.style.display = '';
-                            } else {
-                                card.style.display = 'none';
-                            }
-                        }
-                    });
-
-                    // Hide empty accordion groups
-                    const accordions = container.querySelectorAll('.mobile-accordion-group');
-                    accordions.forEach(acc => {
-                        const visibleCards = acc.querySelectorAll('.mobile-vertical-card[style=""]');
-                        // if searching and no visible cards, hide the whole accordion
-                        if (query !== '' && visibleCards.length === 0 && acc.querySelectorAll('.mobile-vertical-card').length > 0) {
-                            acc.style.display = 'none';
-                        } else {
-                            acc.style.display = '';
-                            if (query !== '') {
-                                // Auto expand if searching
-                                const content = acc.querySelector('.mobile-accordion-content');
-                                if (content) content.classList.add('open');
-                            }
-                        }
-                    });
-                }
-            });
-        });
-    }
-
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    
-    // Global polished tooltip system for KPI Cards (matches chart style)
-    let globalTooltip = d3.select("body").select(".d3-tooltip");
-    if (globalTooltip.empty()) {
-        globalTooltip = d3.select("body")
-            .append("div")
-            .attr("class", "d3-tooltip")
-            .style("opacity", 0);
-    }
-
-    // Add event delegation for any element with data-tooltip
-    document.addEventListener('mouseover', (e) => {
-        const trigger = e.target.closest('[data-tooltip]');
-        if (trigger) {
-            const text = trigger.getAttribute('data-tooltip');
-            globalTooltip.style("opacity", 1)
-                .html(text);
-        }
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        const trigger = e.target.closest('[data-tooltip]');
-        if (trigger) {
-            globalTooltip
-                .style("left", (e.pageX + 15) + "px")
-                .style("top", (e.pageY - 15) + "px");
-        }
-    });
-
-    document.addEventListener('mouseout', (e) => {
-        const trigger = e.target.closest('[data-tooltip]');
-        if (trigger) {
-            globalTooltip.style("opacity", 0);
-        }
-    });
-
-    // Support for touch devices (click to show/hide)
-    document.addEventListener('click', (e) => {
-        const trigger = e.target.closest('[data-tooltip]');
-        if (trigger && window.innerWidth < 1024) {
-            const isVisible = globalTooltip.style("opacity") === "1";
-            if (isVisible) {
-                globalTooltip.style("opacity", 0);
-            } else {
-                const text = trigger.getAttribute('data-tooltip');
-                globalTooltip.style("opacity", 1)
-                    .html(text)
-                    .style("left", (e.pageX + 15) + "px")
-                    .style("top", (e.pageY - 15) + "px");
-            }
-        } else if (!trigger) {
-            globalTooltip.style("opacity", 0);
-        }
-    });
-
-    // Go to top button logic
-    const mainContainer = document.querySelector('.main-container');
-    const scrollTopBtn = document.getElementById('scrollTopBtn');
-    if (mainContainer && scrollTopBtn) {
-        mainContainer.addEventListener('scroll', () => {
-            if (mainContainer.scrollTop > 300) {
-                scrollTopBtn.classList.add('visible');
-            } else {
-                scrollTopBtn.classList.remove('visible');
-            }
-        });
-        
-        // Mobile fallback for body scroll
-        window.addEventListener('scroll', () => {
-             if (window.scrollY > 300) {
-                 scrollTopBtn.classList.add('visible');
-             } else {
-                 scrollTopBtn.classList.remove('visible');
-             }
-        });
-
-        scrollTopBtn.addEventListener('click', () => {
-            mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    }
-
-    // Handle window resize for D3 Charts redrawing and Mobile Accordions
-    window.addEventListener('resize', () => {
-        if (globalFinancialData && globalFinancialData.length > 0 && monthSelector) {
-            const idx = parseInt(monthSelector.value);
-            if (!isNaN(idx)) {
-                // Throttle maybe not strictly needed for this scale, but good practice
-                const rollingData = globalFinancialData.slice(Math.max(0, idx - 11), idx + 1).filter(d => !isYear2025(d));
-                renderMarginChart(rollingData);
-                renderCashFlowChart(rollingData);
-                
-                // Rebuild Mobile Accordions if crossing breakpoint
-                buildMobileAccordionsFromTable('pnlDetailedTable', 'pnlMobileContainer');
-                buildMobileAccordionsFromTable('balanceTable', 'balanceMobileContainer');
-                buildMobileAccordionsFromTable('covenantTable', 'covenantMobileContainer');
-                buildMobileAccordionsFromTable('cashflowTable', 'cashflowMobileContainer');
-                buildMobileAccordionsFromTable('cfMetricsTable', 'cfMetricsMobileContainer');
-                buildMobileAccordionsFromTable('table-estados', 'estadosMobileContainer');
-                
-                // Resumen
-                const lastData = globalFinancialData[idx];
-                const kpis = lastData.kpis || { ingresos: 0, ebitda: 0, margen_ebitda: 0 };
-                const categories = (lastData.pnl && lastData.pnl.categorias) ? lastData.pnl.categorias : {};
-                const totalCost = categories["Costo de Ventas"] || 0;
-                buildMobileAccordionsFromTable('tableResumenOperativo', 'resumenOperativoMobileContainer', 'Resumen Operativo', '');
-                buildMobileAccordionsFromTable('tableVentasSegmento', 'ventasSegmentoMobileContainer', 'Segmentos de Venta', formatCurrency(kpis.ingresos));
-                buildMobileAccordionsFromTable('tableCostosSegmento', 'costosSegmentoMobileContainer', 'Desglose de Costos', formatCurrency(totalCost));
-                const currentOpex = (lastData.pnl && lastData.pnl.opexDetalle) ? Object.values(lastData.pnl.opexDetalle).reduce((acc, val) => acc + val, 0) : 0;
-                buildMobileAccordionsFromTable('tableOpex', 'opexMobileContainer', 'Detalle de Gastos OPEX', formatCurrency(currentOpex));
-            }
-        }
-    });
-});
-
-function exportToExcelSuite(data) {
+window.showSection = (viewId) => {
+    const id = viewId.startsWith('view-') ? viewId : `view-${viewId}`;
+    document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+    document.getElementById(id)?.classList.add('active');
+    window.dispatchEvent(new Event('resize'));
+};
+\nfunction exportToExcelSuite(data) {
     const wb = XLSX.utils.book_new();
 
     // 1. Resumen_Ejecutivo (Visual formatting)
@@ -2300,13 +1892,3 @@ function renderEstadosFinancieros(data, selectedIndex = -1) {
 
     bodyEl.innerHTML = tbBody;
 }
-
-// EXPOSICIÓN GLOBAL PARA VITE
-window.showSection = (viewId) => {
-    const id = viewId.startsWith('view-') ? viewId : `view-${viewId}`;
-    document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
-    const el = document.getElementById(id);
-    if (el) el.classList.add('active');
-    window.dispatchEvent(new Event('resize'));
-};
-window.syncNavigationUI = syncNavigationUI;
