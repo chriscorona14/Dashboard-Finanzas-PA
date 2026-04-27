@@ -20,8 +20,8 @@ const msalConfig = {
         redirectUri: window.location.origin,
     },
     cache: {
-        cacheLocation: "sessionStorage",
-        storeAuthStateInCookie: false,
+        cacheLocation: "localStorage",
+        storeAuthStateInCookie: true,
     }
 };
 
@@ -165,27 +165,109 @@ async function fetchMasterData(token = null) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // If MSAL accounts exist, we could silently login, but for now we require button
-    fetchMasterData();
-    
-    const loginM365Btn = document.getElementById('loginM365Btn');
-    if (loginM365Btn) {
-        loginM365Btn.addEventListener('click', connectM365);
-    }
-    const fileInput = document.getElementById('fileInput');
-    const dropZone = document.getElementById('dropZone');
 
-    // Setup Export and Mobile Menu
-    const btnExportExcel = document.getElementById('btnExportExcel');
-    if (btnExportExcel) {
-        btnExportExcel.addEventListener('click', () => {
-            if (!globalFinancialData || globalFinancialData.length === 0) {
-                alert('No hay datos para exportar.');
-                return;
+document.addEventListener('DOMContentLoaded', async () => {
+    // --- 1. LÓGICA DE PERSISTENCIA Y RECONEXIÓN AUTOMÁTICA ---
+    if (msalInstance) {
+        try {
+            await msalInstance.initialize();
+            
+            // Revisamos si ya existe una sesión guardada en localStorage
+            const accounts = msalInstance.getAllAccounts();
+            
+            if (accounts.length > 0) {
+                console.log("Sesión activa detectada. Intentando login silencioso...");
+                const silentRequest = {
+                    scopes: ["User.Read", "Files.Read", "Files.Read.All"],
+                    account: accounts[0]
+                };
+                
+                try {
+                    const silentResponse = await msalInstance.acquireTokenSilent(silentRequest);
+                    // Si funciona, descargamos la data real de inmediato
+                    await fetchMasterData(silentResponse.accessToken);
+                } catch (silentError) {
+                    console.warn("Token silencioso falló, cargando con ceros:", silentError);
+                    fetchMasterData();
+                }
+            } else {
+                // Si no hay cuenta, cargamos el dashboard en blanco (ceros)
+                fetchMasterData();
             }
-            exportToExcelSuite(globalFinancialData);
+        } catch (error) {
+            console.error("Error en inicialización MSAL:", error);
+            fetchMasterData();
+        }
+    }
+
+    // --- 2. SISTEMA DE NAVEGACIÓN ROBUSTO (BARRA LATERAL) ---
+    const menuLinks = document.querySelectorAll('.menu-item a');
+    
+    menuLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault(); // Evitar recarga de página
+            
+            const menuId = link.id;
+            const targetViewId = menuId.replace('menu-', 'view-');
+            const targetView = document.getElementById(targetViewId);
+
+            if (targetView) {
+                // Actualizar estados visuales de los links
+                menuLinks.forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+                
+                link.classList.add('active');
+                targetView.classList.add('active');
+
+                // Sincronizar UI (títulos y redimensionar gráficas de D3)
+                syncNavigationUI(menuId);
+            }
         });
+    });
+
+    // --- 3. LISTENERS DE BOTONES Y SELECTORES ---
+    document.getElementById('loginM365Btn')?.addEventListener('click', connectM365);
+    document.getElementById('fileInput')?.addEventListener('change', handleFileUpload);
+    
+    if (monthSelector) {
+        monthSelector.addEventListener('change', (e) => {
+            const index = parseInt(e.target.value);
+            if (!isNaN(index)) updateUI(globalFinancialData, index);
+        });
+    }
+
+    // Iconos de Lucide
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+
+// Función de sincronización de UI compartida
+function syncNavigationUI(menuId) {
+    const titles = {
+        'menu-kpi': "Torre de Control: Indicadores Clave",
+        'menu-resumen': "Dashboard de Gestión Corporativa (RD$)",
+        'menu-pnl': "Estado de Resultados Detallado (RD$)",
+        'menu-balance': "Balance General Consolidado (RD$)",
+        'menu-cashflow': "Estado de Flujo de Efectivo (RD$)",
+        'menu-estados': "Estados Financieros",
+        'menu-config': "Configuración y Auditoría",
+        'menu-glosario': "Glosario Financiero"
+    };
+
+    const titleLabel = document.getElementById('titleLabel');
+    if (titleLabel && titles[menuId]) {
+        titleLabel.textContent = titles[menuId];
+    }
+    
+    // Visibilidad de controles superiores
+    const periodContainer = document.getElementById('periodContainer');
+    if (periodContainer) {
+        periodContainer.style.display = (menuId === 'menu-config' || menuId === 'menu-glosario') ? 'none' : 'flex';
+    }
+
+    // Redimensionar layouts y D3
+    window.dispatchEvent(new Event('resize'));
+}
+
     }
 
     const btnExportPDF = document.getElementById('btnExportPDF');
@@ -2219,63 +2301,7 @@ function renderEstadosFinancieros(data, selectedIndex = -1) {
     bodyEl.innerHTML = tbBody;
 }
 
-
-// --- SISTEMA DE NAVEGACIÓN ROBUSTO (SIN ALTERAR DISEÑO) ---
-document.addEventListener('DOMContentLoaded', () => {
-    const menuLinks = document.querySelectorAll('.menu-item a');
-    
-    menuLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            const menuId = link.id;
-            const targetViewId = menuId.replace('menu-', 'view-');
-            const targetView = document.getElementById(targetViewId);
-
-            if (targetView) {
-                // Limpiar estados activos
-                menuLinks.forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
-                
-                // Activar nueva vista
-                link.classList.add('active');
-                targetView.classList.add('active');
-
-                // Actualizar interfaz (títulos, contenedores y redibujo de gráficas)
-                syncNavigationUI(menuId);
-            }
-        });
-    });
-});
-
-function syncNavigationUI(menuId) {
-    const titles = {
-        'menu-kpi': "Torre de Control: Indicadores Clave",
-        'menu-resumen': "Dashboard de Gestión Corporativa (RD$)",
-        'menu-pnl': "Estado de Resultados Detallado (RD$)",
-        'menu-balance': "Balance General Consolidado (RD$)",
-        'menu-cashflow': "Estado de Flujo de Efectivo (RD$)",
-        'menu-estados': "Estados Financieros",
-        'menu-config': "Configuración y Auditoría",
-        'menu-glosario': "Glosario Financiero"
-    };
-
-    const titleLabel = document.getElementById('titleLabel');
-    if (titleLabel && titles[menuId]) {
-        titleLabel.textContent = titles[menuId];
-    }
-    
-    // Control de visibilidad del contenedor de periodo
-    const periodContainer = document.getElementById('periodContainer');
-    if (periodContainer) {
-        periodContainer.style.display = (menuId === 'menu-config' || menuId === 'menu-glosario') ? 'none' : 'flex';
-    }
-
-    // Forzar redibujado de D3 y reajuste de layouts
-    window.dispatchEvent(new Event('resize'));
-}
-
-// Exposición global para compatibilidad con otros scripts
+// EXPOSICIÓN GLOBAL PARA VITE
 window.showSection = (viewId) => {
     const id = viewId.startsWith('view-') ? viewId : `view-${viewId}`;
     document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
@@ -2283,3 +2309,4 @@ window.showSection = (viewId) => {
     if (el) el.classList.add('active');
     window.dispatchEvent(new Event('resize'));
 };
+window.syncNavigationUI = syncNavigationUI;
