@@ -1,327 +1,132 @@
 <!doctype html>
 <html lang="es">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Finance Dashboard Pro | Planeta Azul</title>
+    <title>Finance Dashboard Pro | Agua Planeta Azul</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js"></script>
     <style>
-      :root {
-        --bg: #f8f9fa;
-        --sidebar: #012a4a;
-        --sidebar-dark: #013a63;
-        --sidebar-accent: #0096c7;
-        --card: #ffffff;
-        --text-primary: #2b2b2b;
-        --text-secondary: #5f6b76;
-        --line: #e7edf2;
-        --success: #2a9d8f;
-        --warning: #f4a261;
-        --danger: #e76f51;
-        --primary: #0096c7;
-        --shadow: 0 8px 24px rgba(15, 76, 129, 0.08);
-        --border: #eef2f5;
-      }
+        /* RECUPERANDO TUS ESTILOS ORIGINALES */
+        :root {
+            --bg: #f8f9fa; --sidebar: #012a4a; --sidebar-dark: #013a63;
+            --sidebar-accent: #0096c7; --card: #ffffff; --text-primary: #2b2b2b;
+            --text-secondary: #5f6b76; --line: #e7edf2; --success: #2a9d8f;
+            --warning: #f4a261; --danger: #e76f51; --primary: #0096c7;
+            --shadow: 0 8px 24px rgba(15, 76, 129, 0.08); --border: #eef2f5;
+        }
 
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100vw; height: 100vh; overflow: hidden; font-family: "Segoe UI", sans-serif; background: var(--bg); color: var(--text-primary); display: flex; }
 
-      html, body {
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
-        background: var(--bg);
-        color: var(--text-primary);
-      }
+        /* SIDEBAR PRO */
+        .sidebar { width: 260px; height: 100vh; background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-dark) 100%); color: #ffffff; padding: 28px 20px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 999; transition: transform 0.3s ease; overflow-y: auto; }
+        .brand { text-align: center; margin-bottom: 32px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* LOGO ANIMADO RECUPERADO */
+        .ring1 { stroke: #3b82f6; stroke-width: 4; stroke-linecap: round; transform-origin: 50px 50px; animation: spin 20s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-      body { display: flex; }
+        .menu { list-style: none; margin-top: 32px; flex-grow: 1; }
+        .menu-item { margin-bottom: 12px; }
+        .menu-item a { display: flex; align-items: center; text-decoration: none; color: rgba(255, 255, 255, 0.7); padding: 12px 14px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease; }
+        .menu-item a:hover, .menu-item a.active { background: rgba(255, 255, 255, 0.1); color: #ffffff; transform: translateX(4px); }
 
-      /* Mobile Header */
-      .mobile-header {
-        display: none;
-        background: var(--sidebar);
-        padding: 16px 20px;
-        color: white;
-        align-items: center;
-        justify-content: space-between;
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
+        /* CONTENEDOR PRINCIPAL */
+        .main-container { flex-grow: 1; height: 100vh; overflow-y: auto; padding: 40px; position: relative; }
+        .view-container { display: none; animation: fadeIn 0.3s ease; }
+        .view-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
 
-      /* Sidebar Styles */
-      .sidebar {
-        width: 250px;
-        height: 100vh;
-        background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-dark) 100%);
-        color: #ffffff;
-        padding: 28px 20px;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        z-index: 999;
-        transition: transform 0.3s ease;
-      }
+        /* SCORE CARDS Y GRÁFICAS */
+        .kpi-scorecard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px; }
+        .score-card { background: white; padding: 24px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+        .score-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
+        .score-value { font-size: 1.75rem; font-weight: 800; color: var(--sidebar); }
+        .dashboard-charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .chart-box { background: white; padding: 24px; border-radius: 24px; border: 1px solid var(--border); box-shadow: var(--shadow); min-height: 300px; }
 
-      .menu { list-style: none; margin-top: 32px; flex-grow: 1; }
-      .menu-item { margin-bottom: 8px; }
-      .menu-item a {
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        color: rgba(255, 255, 255, 0.7);
-        padding: 12px 14px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s;
-      }
-      .menu-item a:hover, .menu-item a.active {
-        background: rgba(255, 255, 255, 0.1);
-        color: #ffffff;
-      }
-
-      /* Main Content */
-      .main-container {
-        flex-grow: 1;
-        height: 100vh;
-        overflow-y: auto;
-        padding: 40px;
-        position: relative;
-      }
-
-      .view-container { display: none; animation: fadeIn 0.3s ease; }
-      .view-container.active { display: block; }
-
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-      /* Tables & Cards */
-      .section-table {
-        background: var(--card);
-        border-radius: 24px;
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border);
-        overflow: hidden;
-        margin-bottom: 32px;
-      }
-
-      .table-header {
-        padding: 20px 32px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: white;
-      }
-
-      .header-section { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; }
-      .header-info h2 { font-size: 1.75rem; font-weight: 800; color: var(--sidebar); }
-
-      /* Glosario Refinement */
-      #view-glosario .glosario-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        padding: 20px 0;
-      }
-
-      /* Responsive */
-      @media screen and (max-width: 1024px) {
-        .sidebar { position: fixed; transform: translateX(-100%); top: 60px; height: calc(100vh - 60px); }
-        .sidebar.open { transform: translateX(0); }
-        .mobile-header { display: flex; }
-        .main-container { margin-top: 60px; padding: 20px; }
-      }
-
-      .pnl-detail-table {
-        background: white;
-        padding: 20px;
-        border-radius: 20px;
-        box-shadow: var(--shadow);
-        overflow-x: auto;
-      }
-      
-      table { width: 100%; border-collapse: collapse; }
-      th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: right; font-size: 0.85rem; }
-      th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: white; min-width: 200px; }
-
-      .upload-btn {
-        background: var(--primary);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        border: none;
-        font-weight: 700;
-        cursor: pointer;
-        transition: 0.2s;
-      }
-      .upload-btn:hover { filter: brightness(1.1); }
+        .hidden { display: none !important; }
     </style>
-  </head>
-  <body>
-    <header class="mobile-header">
-      <div class="mobile-brand">
-        <span style="font-weight: 800;">Planeta Azul</span>
-      </div>
-      <button class="menu-toggle-btn" id="menuToggleBtn" style="background:none; border:none; color:white;">
-        <i data-lucide="menu"></i>
-      </button>
-    </header>
-
-    <div id="loader">
-      <div class="spinner"></div>
-      Procesando Inteligencia Financiera...
-    </div>
-
+</head>
+<body>
     <aside class="sidebar">
-      <div class="brand" style="text-align: center; margin-bottom: 20px;">
-        <h1 style="color: #38bdf8; font-size: 1.5rem;">Finanzas</h1>
-        <p style="font-size: 0.8rem; opacity: 0.7;">Torre de Control</p>
-      </div>
-
-      <nav class="menu">
-        <div class="menu-item"><a href="#" id="menu-kpi" class="active"><i data-lucide="layout-dashboard" style="margin-right:10px; width:18px;"></i> KPI Dashboard</a></div>
-        <div class="menu-item"><a href="#" id="menu-resumen"><i data-lucide="pie-chart" style="margin-right:10px; width:18px;"></i> Resumen Ejecutivo</a></div>
-        <div class="menu-item"><a href="#" id="menu-pnl"><i data-lucide="file-text" style="margin-right:10px; width:18px;"></i> P&L Detallado</a></div>
-        <div class="menu-item"><a href="#" id="menu-balance"><i data-lucide="library" style="margin-right:10px; width:18px;"></i> Balance Sheet</a></div>
-        <div class="menu-item"><a href="#" id="menu-cashflow"><i data-lucide="wallet" style="margin-right:10px; width:18px;"></i> Cash Flow</a></div>
-        <div class="menu-item"><a href="#" id="menu-estados"><i data-lucide="trending-up" style="margin-right:10px; width:18px;"></i> Estados Financieros</a></div>
-        <div class="menu-item"><a href="#" id="menu-config"><i data-lucide="settings" style="margin-right:10px; width:18px;"></i> Configuración</a></div>
-        <div class="menu-item"><a href="#" id="menu-glosario"><i data-lucide="book-open" style="margin-right:10px; width:18px;"></i> Glosario Financiero</a></div>
-      </nav>
-
-      <div class="sidebar-footer" style="padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <div id="sidebarSyncStatus" style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem;">
-          <div id="sidebarSyncDot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--warning);"></div>
-          <span id="sidebarSyncText">Desconectado</span>
+        <div class="brand">
+            <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
+                <path class="ring1" d="M 50 15 C 75 15 85 30 85 50 C 85 70 70 85 50 85 C 25 85 15 65 15 50 C 15 35 30 15 50 15" />
+                <circle cx="50" cy="50" r="20" fill="#22c55e" />
+            </svg>
+            <h1 style="color: #38bdf8; font-size: 1.2rem; margin-top: 10px;">Planeta Azul</h1>
+            <p style="font-size: 0.8rem; opacity: 0.7;">Análisis Financiero</p>
         </div>
-      </div>
+        <nav class="menu">
+            <div class="menu-item"><a href="#" id="menu-kpi" class="active"><i data-lucide="layout-dashboard"></i> KPI Dashboard</a></div>
+            <div class="menu-item"><a href="#" id="menu-resumen"><i data-lucide="pie-chart"></i> Resumen Ejecutivo</a></div>
+            <div class="menu-item"><a href="#" id="menu-pnl"><i data-lucide="file-text"></i> P&L Detallado</a></div>
+            <div class="menu-item"><a href="#" id="menu-balance"><i data-lucide="library"></i> Balance Sheet</a></div>
+            <div class="menu-item"><a href="#" id="menu-cashflow"><i data-lucide="wallet"></i> Cash Flow</a></div>
+            <div class="menu-item"><a href="#" id="menu-config"><i data-lucide="settings"></i> Configuración</a></div>
+            <div class="menu-item"><a href="#" id="menu-glosario"><i data-lucide="book-open"></i> Glosario</a></div>
+        </nav>
     </aside>
 
     <main class="main-container">
-      <header class="header-section">
-        <div class="header-info">
-          <h2 id="titleLabel">Torre de Control: Indicadores Clave</h2>
-          <div id="periodContainer" style="display: flex; gap: 12px; align-items: center; margin-top: 5px;">
-            <p id="periodLabel" style="color: var(--text-secondary); font-size: 0.9rem;">Esperando datos...</p>
-            <div id="integrityBadge" style="display: none;"></div>
-          </div>
-        </div>
-        
-        <div class="header-actions" style="display: flex; gap: 10px;">
-          <div id="searchContainerWrapper" style="display:none;">
-            <input type="text" id="accountSearch" placeholder="Buscar cuenta..." style="padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
-          </div>
-          <select id="monthSelector" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-weight: 600; display:none;"></select>
-        </div>
-      </header>
-
-      <div id="view-kpi" class="view-container active">
-        <div class="kpi-scorecard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-            <div class="card" style="background: white; padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-                <p style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">INGRESOS</p>
-                <h3 id="dash-ingresos" style="font-size: 1.5rem; margin: 10px 0;">$0.0M</h3>
-                <div id="trend-ingresos" style="font-size: 0.8rem;">0.0% vs mes ant.</div>
-                <div id="spark-ingresos" class="sparkline-container"></div>
+        <header style="margin-bottom: 30px; display: flex; justify-content: space-between;">
+            <div>
+                <h2 id="titleLabel">Torre de Control</h2>
+                <p id="periodLabel" style="color: var(--text-secondary)">Esperando datos...</p>
             </div>
-            <div class="card" style="background: white; padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-                <p style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">EBITDA</p>
-                <h3 id="dash-ebitda" style="font-size: 1.5rem; margin: 10px 0;">$0.0M</h3>
-                <div id="trend-ebitda" style="font-size: 0.8rem;">0.0% vs mes ant.</div>
-                <div id="spark-ebitda" class="sparkline-container"></div>
+            <select id="monthSelector" style="padding: 8px; border-radius: 8px; display: none;"></select>
+        </header>
+
+        <div id="view-kpi" class="view-container active">
+            <div class="kpi-scorecard-grid">
+                <div class="score-card">
+                    <div class="score-label">Ingresos</div>
+                    <div class="score-value" id="dash-ingresos">$0.0M</div>
+                    <div id="spark-ingresos"></div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">EBITDA</div>
+                    <div class="score-value" id="dash-ebitda">$0.0M</div>
+                    <div id="spark-ebitda"></div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">Caja Final</div>
+                    <div class="score-value" id="dash-cash">$0.0M</div>
+                    <div id="spark-cash"></div>
+                </div>
             </div>
-            <div class="card" style="background: white; padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-                <p style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">CAJA FINAL</p>
-                <h3 id="dash-cash" style="font-size: 1.5rem; margin: 10px 0;">$0.0M</h3>
-                <div id="trend-cash" style="font-size: 0.8rem;">0.0% vs mes ant.</div>
-                <div id="spark-cash" class="sparkline-container"></div>
+
+            <div class="dashboard-charts-grid">
+                <div class="chart-box">
+                    <h4>Evolución Margen EBITDA %</h4>
+                    <div id="marginChart"></div> </div>
+                <div class="chart-box">
+                    <h4>Evolución Flujo de Caja</h4>
+                    <div id="cashFlowChart"></div> </div>
+            </div>
+            <div id="alertsContainer"></div>
+        </div>
+
+        <div id="view-resumen" class="view-container">
+            <div class="score-card"><h3>Resumen de Operación</h3><table id="tableResumenOperativo"><tbody></tbody></table></div>
+        </div>
+        <div id="view-pnl" class="view-container"><div class="score-card"><table id="pnlDetailedTable"><thead id="pnlDetailedHeader"></thead><tbody id="pnlDetailedBody"></tbody></table></div></div>
+        <div id="view-balance" class="view-container"><div class="score-card"><table id="balanceTable"><thead id="balanceHeader"></thead><tbody id="balanceBody"></tbody></table></div></div>
+        <div id="view-cashflow" class="view-container"><div class="score-card"><table id="cashflowTable"><thead id="cashflowHeader"></thead><tbody id="cashflowBody"></tbody></table></div></div>
+        <div id="view-config" class="view-container">
+            <div class="score-card" style="max-width: 500px; margin: auto;">
+                <h3>Gestión de Conexión</h3>
+                <button id="loginM365Btn" style="width: 100%; padding: 15px; background: var(--sidebar); color: white; border-radius: 10px; cursor: pointer; margin-top: 20px;">Conectar Office 365</button>
+                <div id="engineStatus" style="margin-top: 20px; font-size: 0.8rem;"></div>
             </div>
         </div>
-        <div id="alertsContainer" style="margin-top: 30px;"></div>
-      </div>
-
-      <div id="view-resumen" class="view-container">
-        <div class="section-table">
-            <table id="tableResumenOperativo">
-                <thead><tr><th>Categoría</th><th>Previo</th><th>Actual</th><th>Var.</th><th>%</th></tr></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
-      </div>
-
-      <div id="view-pnl" class="view-container">
-        <div class="pnl-detail-table">
-            <table id="pnlDetailedTable">
-                <thead id="pnlDetailedHeader"></thead>
-                <tbody id="pnlDetailedBody"></tbody>
-            </table>
-        </div>
-      </div>
-
-      <div id="view-balance" class="view-container">
-        <div class="pnl-detail-table">
-            <table id="balanceTable">
-                <thead id="balanceHeader"></thead>
-                <tbody id="balanceBody"></tbody>
-            </table>
-        </div>
-      </div>
-
-      <div id="view-cashflow" class="view-container">
-        <div class="pnl-detail-table">
-            <table id="cashflowTable">
-                <thead id="cashflowHeader"></thead>
-                <tbody id="cashflowBody"></tbody>
-            </table>
-        </div>
-      </div>
-
-      <div id="view-estados" class="view-container">
-        <div class="pnl-detail-table">
-            <table id="table-estados">
-                <thead id="header-estados"></thead>
-                <tbody id="body-estados"></tbody>
-            </table>
-        </div>
-      </div>
-
-      <div id="view-config" class="view-container">
-        <div class="card" style="background: white; padding: 30px; border-radius: 20px; max-width: 600px; margin: 0 auto;">
-            <h3 style="margin-bottom: 20px;">Gestión de Datos</h3>
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <button id="loginM365Btn" class="upload-btn" style="background: #0f172a;">
-                    <i data-lucide="cloud" style="width: 18px; vertical-align: middle; margin-right: 8px;"></i> Conectar Office 365
-                </button>
-                <hr style="border: 0; border-top: 1px solid var(--border);">
-                <label for="fileInput" class="upload-btn" style="text-align: center;">Cargar Excel Manual</label>
-                <input type="file" id="fileInput" style="display: none;">
-            </div>
-            <div id="engineStatus" style="margin-top: 20px; padding: 15px; border-radius: 10px; background: #f1f5f9; font-size: 0.8rem;"></div>
-        </div>
-      </div>
-
-      <div id="view-glosario" class="view-container">
-        <div class="glosario-grid">
-            <div style="grid-column: 1 / -1; padding-bottom: 20px;">
-                <p style="color: var(--text-secondary);">Definiciones y metodologías de cálculo para Agua Planeta Azul.</p>
-            </div>
-            </div>
-      </div>
-
+        <div id="view-glosario" class="view-container"><div class="glosario-grid"><h3>Glosario Financiero</h3></div></div>
     </main>
 
-    <button class="floating-top-btn" id="scrollTopBtn" style="position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background: var(--primary); color: white; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 1000;">
-      <i data-lucide="chevron-up"></i>
-    </button>
-
     <script type="module" src="./main.js"></script>
-  </body>
+</body>
 </html>
