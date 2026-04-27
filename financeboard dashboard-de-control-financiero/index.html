@@ -1,0 +1,2701 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finance Dashboard Pro</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- HTML2PDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- MSAL for Microsoft 365 Auth -->
+    <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js"></script>
+    <style>
+      :root {
+        --bg: #f8f9fa;
+        --sidebar: #012a4a;
+        --sidebar-dark: #013a63;
+        --sidebar-accent: #0096c7;
+        --card: #ffffff;
+        --text-primary: #2b2b2b;
+        --text-secondary: #5f6b76;
+        --line: #e7edf2;
+        --success: #2a9d8f;
+        --warning: #f4a261;
+        --danger: #e76f51;
+        --primary: #0096c7;
+        --shadow: 0 8px 24px rgba(15, 76, 129, 0.08);
+        --border: #eef2f5;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-family:
+          "Segoe UI",
+          Roboto,
+          -apple-system,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text-primary);
+      }
+
+      body {
+        display: flex;
+      }
+
+      /* Hamburger Menu Navbar (Mobile ONLY) */
+      .mobile-header {
+        display: none;
+        background: var(--sidebar);
+        padding: 16px 20px;
+        color: white;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+      }
+
+      .mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: white;
+      }
+
+      .menu-toggle-btn {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 4px;
+      }
+
+      /* Sidebar Styles */
+      .sidebar {
+        width: 250px;
+        height: 100vh;
+        background: linear-gradient(
+          180deg,
+          var(--sidebar) 0%,
+          var(--sidebar-dark) 100%
+        );
+        color: #ffffff;
+        padding: 28px 20px 80px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex-shrink: 0;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        z-index: 999;
+        overflow-y: auto;
+      }
+
+      .brand h1 {
+        font-size: 1.35rem;
+        font-weight: 800;
+        margin-bottom: 8px;
+        color: #38bdf8;
+        letter-spacing: -0.5px;
+      }
+
+      .brand p {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        line-height: 1.4;
+      }
+
+      .menu {
+        list-style: none;
+        margin-top: 32px;
+        flex-grow: 1;
+      }
+
+      .menu-item {
+        margin-bottom: 12px;
+      }
+
+      .menu-item a {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: rgba(255, 255, 255, 0.7);
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+
+      .menu-item a:hover,
+      .menu-item a.active {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        transform: translateX(4px);
+      }
+
+      .sidebar-footer {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        text-align: center;
+      }
+
+      .upload-btn {
+        display: inline-block;
+        background: var(--sidebar-accent);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 12px;
+        transition: all 0.2s;
+        width: 100%;
+      }
+
+      .upload-btn:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+      }
+
+      /* Main Content Styles */
+      .main-container {
+        flex-grow: 1;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 40px;
+        position: relative;
+      }
+
+      .view-container {
+        display: none;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .view-container.active {
+        display: block;
+      }
+
+      /* KPI DASHBOARD STYLES */
+      .kpi-scorecard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      .kpi-secondary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+
+      .ratio-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .ratio-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+
+      .ratio-value-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .ratio-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text);
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .ratio-status {
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .score-card {
+        background: white;
+        padding: 24px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        transition: transform 0.2s;
+      }
+
+      .score-card:hover {
+        transform: translateY(-4px);
+      }
+
+      .score-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        letter-spacing: 0.05em;
+      }
+
+      .score-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--sidebar);
+        margin-bottom: 4px;
+      }
+
+      .score-trend {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .dashboard-charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      .chart-box {
+        background: white;
+        padding: 24px;
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+      }
+
+      .chart-header {
+        margin-bottom: 20px;
+      }
+
+      .chart-header h4 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--sidebar);
+      }
+
+      .chart-header p {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .alerts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+      }
+
+      .alert-card {
+        padding: 16px;
+        border-radius: 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 0.85rem;
+      }
+
+      .alert-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+      }
+      .alert-danger {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+      .alert-success {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+      }
+
+      .sparkline-container {
+        height: 40px;
+        width: 100%;
+        margin-top: 8px;
+      }
+
+      @media screen and (max-width: 1024px) {
+        .dashboard-charts-grid {
+          grid-template-columns: 1fr;
+        }
+        .kpi-scorecard-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        body {
+          flex-direction: column;
+        }
+        .mobile-header {
+          display: flex;
+        }
+        .sidebar {
+          position: fixed;
+          transform: translateX(-100%);
+          top: 60px; /* height of mobile header */
+          height: calc(100vh - 60px);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .main-container {
+          margin-top: 60px;
+          height: calc(100vh - 60px);
+          padding: 20px;
+        }
+
+        /* Reorder in Dashboard */
+        #view-kpi.active {
+          display: flex;
+          flex-direction: column;
+        }
+        #view-kpi {
+          /* Fallback if not active overridden */
+        }
+        #dashboard-alerts-section {
+          order: -2;
+          margin-bottom: 24px;
+        }
+        #dashboard-main-kpis {
+          order: -1;
+          margin-bottom: 24px;
+        }
+
+        /* Hide non-priority KPIs in mobile summary */
+        .hide-on-mobile {
+          display: none !important;
+        }
+
+        .header-info h2 {
+          font-size: 1.3rem;
+        }
+        .header-info p {
+          margin-bottom: 6px;
+        }
+        .header-actions {
+          flex-wrap: wrap;
+          justify-content: space-between;
+        }
+        .header-actions select,
+        .header-actions .search-container {
+          flex: 1 1 100%;
+          margin-bottom: 8px;
+          position: fixed !important;
+          bottom: 80px;
+          right: 20px;
+          z-index: 1000;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          border-radius: 24px;
+          width: auto !important;
+          max-width: none !important;
+        }
+        .header-actions .search-container input {
+          width: 250px !important;
+          max-width: none !important;
+          border-radius: 24px !important;
+        }
+        .upload-btn {
+          flex: 1;
+          text-align: center;
+          margin-top: 0 !important;
+        }
+      }
+
+      @media screen and (max-width: 768px) {
+        html,
+        body {
+          overflow-y: auto !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        .main-container {
+          height: auto;
+          overflow: visible;
+        }
+        .kpi-scorecard-grid {
+          grid-template-columns: 1fr;
+        }
+        .kpi-secondary-grid {
+          grid-template-columns: 1fr;
+        }
+        .dashboard-charts-grid {
+          display: none !important;
+        }
+      }
+
+      /* Mobile Accordion & Vertical Cards styling */
+      .mobile-accordion-group {
+        margin-bottom: 8px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        overflow: hidden;
+      }
+      .mobile-accordion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #f8fafc;
+        font-weight: 700;
+        color: var(--sidebar);
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      .mobile-accordion-content {
+        display: none;
+        padding: 0 16px 16px 16px;
+      }
+      .mobile-accordion-content.open {
+        display: block;
+      }
+      .mobile-vertical-card {
+        background: #fcfdfe;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 12px;
+      }
+      .mobile-vertical-card-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .mobile-vertical-card-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        font-size: 11px;
+      }
+      
+      .floating-top-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 9999;
+      }
+      @media screen and (max-width: 768px) {
+        .kpi-grid {
+          display: none !important;
+        }
+
+        .floating-top-btn.visible {
+          display: flex;
+        }
+        .desktop-only-table {
+          display: none !important;
+        }
+        
+        .pnl-detail-table th:first-child,
+        .pnl-detail-table td:first-child {
+          width: 120px !important;
+          min-width: 120px !important;
+          box-shadow: inset -4px 0 6px -4px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Swipe indicator styling */
+        .swipe-indicator {
+          display: block;
+          text-align: right;
+          font-size: 0.75rem;
+          color: var(--primary);
+          padding: 4px 16px;
+          animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+          0% { opacity: 0.6; transform: translateX(0); }
+          50% { opacity: 1; transform: translateX(4px); }
+          100% { opacity: 0.6; transform: translateX(0); }
+        }
+        
+        table {
+           font-size: 10.5px !important;
+        }
+        th, td {
+           padding: 10px 10px !important;
+        }
+        .pnl-detail-table th, .pnl-detail-table td {
+           padding: 8px 10px !important;
+        }
+      }
+      .d3-tooltip {
+        position: absolute;
+        padding: 10px 14px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(4px);
+        color: #fff;
+        border-radius: 12px;
+        font-size: 13px;
+        pointer-events: none;
+        opacity: 0;
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+        z-index: 10000;
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.3),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        font-family: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        line-height: 1.5;
+      }
+
+      .d3-tooltip strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--primary-light, #60a5fa);
+        font-size: 14px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .pnl-detail-table {
+        background: white;
+        padding: 24px;
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        margin-top: 24px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+      }
+
+      .pnl-detail-table table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 1100px;
+        table-layout: auto !important; /* Allow columns to breathe */
+      }
+
+      .pnl-detail-table th,
+      .pnl-detail-table td {
+        padding: 14px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: right;
+        font-size: 0.82rem;
+        white-space: nowrap;
+        width: auto !important; /* Override broad nth-child rules */
+      }
+
+      .pnl-detail-table tr:hover td {
+        background-color: #f8fafc;
+      }
+
+      .pnl-detail-table th:first-child,
+      .pnl-detail-table td:first-child {
+        text-align: left;
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 10;
+        font-weight: 500;
+        width: 320px;
+        min-width: 320px;
+        border-right: 2px solid var(--border);
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.04);
+      }
+
+      .pnl-detail-table tr:hover td:first-child {
+        background-color: #f1f5f9;
+      }
+
+      .pnl-detail-table th {
+        background: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.65rem;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .row-total {
+        background-color: #f1f5f9 !important;
+        border-top: 1px solid var(--border);
+        border-bottom: 2px solid var(--border);
+      }
+
+      .row-total td {
+        font-weight: 800 !important;
+        color: var(--sidebar) !important;
+      }
+
+      .row-category {
+        background-color: #f8fafc !important;
+      }
+
+      .row-category td {
+        font-weight: 700 !important;
+        color: var(--sidebar);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+      }
+
+      .row-highlight {
+        background-color: rgba(0, 150, 199, 0.04) !important;
+      }
+
+      .row-highlight td {
+        font-weight: 700 !important;
+        color: var(--primary) !important;
+      }
+
+      .row-source td {
+        color: #64748b;
+        font-style: italic;
+      }
+
+      .row-indent {
+        padding-left: 40px !important;
+        color: var(--text-secondary);
+        font-style: italic;
+      }
+
+      .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      .header-info h2 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--sidebar);
+        letter-spacing: -0.5px;
+      }
+
+      .header-info p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        margin-top: 4px;
+      }
+
+      /* KPI Grid */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        transition: transform 0.2s;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+      }
+
+      .card-label {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+      }
+
+      .card-value {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: var(--sidebar);
+      }
+
+      .card-trend {
+        font-size: 0.85rem;
+        margin-top: 8px;
+        font-weight: 600;
+      }
+
+      /* Secondary Grid */
+      .grid-balance {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 12px;
+      }
+
+      .status-ok {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .status-error {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      /* Tables */
+      .section-table {
+        background: var(--card);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        margin-bottom: 32px;
+      }
+
+      .table-header {
+        padding: 24px 32px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .table-header h3 {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--sidebar);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+        min-width: 600px;
+      }
+
+      th,
+      td {
+        padding: 16px 32px;
+        border-bottom: 1px solid var(--border);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .section-table th:first-child,
+      .section-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 2;
+        border-right: 1px solid var(--border);
+      }
+
+      .section-table th:first-child {
+        background: #fcfdfe;
+      }
+
+      /* Column Widths Alignment */
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 30%;
+      }
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 17.5%;
+      }
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 17.5%;
+      }
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 17.5%;
+      }
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 17.5%;
+      }
+
+      th {
+        background: #fcfdfe;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover {
+        background: #f8fafc;
+      }
+
+      /* Helpers */
+      #loader {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: none;
+        z-index: 2000;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-weight: 800;
+        color: var(--primary);
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      #engineStatus {
+        margin-top: 12px;
+        background: #f8fafc;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        line-height: 1.5;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+      }
+
+      #engineStatus b {
+        color: var(--sidebar);
+        font-weight: 700;
+      }
+
+      #fileInput {
+        display: none;
+      }
+
+      /* Export/Print Styles */
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 1cm;
+        }
+        body {
+          background: white;
+          font-size: 11pt;
+          color: black;
+        }
+        .sidebar,
+        .mobile-header,
+        .header-actions,
+        #loader,
+        #dropZone {
+          display: none !important;
+        }
+        .main-container {
+          padding: 0 !important;
+          overflow: visible !important;
+          height: auto !important;
+          margin: 0 !important;
+        }
+
+        .view-container:not(#view-config) {
+          display: block !important;
+          page-break-after: always;
+          break-after: page;
+          visibility: visible !important;
+          position: static !important;
+          opacity: 1 !important;
+          animation: none !important;
+        }
+        #view-config {
+          display: none !important;
+        }
+
+        .dashboard-charts-grid,
+        .chart-box,
+        #marginChart,
+        #cashFlowChart,
+        svg {
+          opacity: 1 !important;
+          visibility: visible !important;
+          display: block !important;
+        }
+
+        .chart-box {
+          break-inside: avoid;
+          page-break-inside: avoid;
+          border: 1px solid #ccc;
+          box-shadow: none;
+        }
+        .section-table,
+        .pnl-detail-table,
+        .card,
+        .score-card,
+        .ratio-card {
+          break-inside: auto;
+          page-break-inside: auto;
+          border: 1px solid #ccc !important;
+          box-shadow: none !important;
+        }
+        tr {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .pnl-detail-table {
+          overflow: visible !important;
+          margin-bottom: 20px;
+        }
+        table {
+          table-layout: auto !important;
+          width: 100%;
+          zoom: 0.8;
+        }
+        th,
+        td {
+          padding: 6px !important;
+          font-size: 8pt !important;
+          white-space: normal !important;
+        }
+        .pnl-detail-table th:first-child,
+        .pnl-detail-table td:first-child {
+          position: static !important;
+          width: auto !important;
+          min-width: auto !important;
+          box-shadow: none !important;
+          border-right: 1px solid #ccc !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="mobile-header">
+      <div class="mobile-brand">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle cx="50" cy="50" r="40" stroke="#38bdf8" stroke-width="8" />
+          <circle cx="50" cy="50" r="20" fill="#22c55e" />
+        </svg>
+        <span>Planeta Azul</span>
+      </div>
+      <button class="menu-toggle-btn" id="menuToggleBtn">
+        <i data-lucide="menu"></i>
+      </button>
+    </header>
+
+    <div id="loader">
+      <div class="spinner"></div>
+      Procesando Inteligencia Financiera...
+    </div>
+
+    <aside class="sidebar">
+      <div class="top-section">
+        <div
+          class="brand"
+          style="
+            text-align: center;
+            margin-bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          "
+        >
+          <svg
+            width="120"
+            height="120"
+            viewBox="0 0 100 100"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style="margin-bottom: 10px"
+          >
+            <style>
+              .ring1 {
+                stroke: #3b82f6;
+                stroke-width: 4;
+                stroke-linecap: round;
+                transform-origin: 50px 50px;
+                animation: spin 20s linear infinite;
+              }
+              .ring2 {
+                stroke: #22c55e;
+                stroke-width: 3.5;
+                stroke-linecap: round;
+                transform-origin: 50px 50px;
+                animation: spin 25s linear infinite reverse;
+              }
+              .ring3 {
+                stroke: #ef4444;
+                stroke-width: 3;
+                stroke-linecap: round;
+                transform-origin: 50px 50px;
+                animation: spin 15s linear infinite;
+              }
+              .ring4 {
+                stroke: #f59e0b;
+                stroke-width: 4.5;
+                stroke-linecap: round;
+                transform-origin: 50px 50px;
+                animation: spin 30s linear infinite reverse;
+              }
+              @keyframes spin {
+                100% {
+                  transform: rotate(360deg);
+                }
+              }
+            </style>
+            <path
+              class="ring1"
+              d="M 50 15 C 75 15 85 30 85 50 C 85 70 70 85 50 85 C 25 85 15 65 15 50 C 15 35 30 15 50 15"
+            />
+            <path
+              class="ring2"
+              d="M 45 18 C 65 20 78 35 78 55 C 78 75 55 82 35 75 C 15 70 18 45 30 25 C 35 15 40 17 45 18"
+            />
+            <path
+              class="ring3"
+              d="M 55 20 C 72 20 88 40 82 60 C 75 82 48 83 28 75 C 8 68 25 35 40 25 C 45 22 50 20 55 20"
+            />
+            <path
+              class="ring4"
+              d="M 40 15 C 62 10 84 25 84 45 C 84 65 60 90 40 80 C 20 72 18 50 25 30 C 30 18 35 16 40 15"
+            />
+            <circle cx="25" cy="22" r="3.5" fill="#f59e0b" />
+            <circle cx="80" cy="72" r="4" fill="#3b82f6" />
+            <circle cx="20" cy="65" r="2.5" fill="#22c55e" />
+            <circle cx="85" cy="35" r="3" fill="#ef4444" />
+          </svg>
+          <div
+            style="
+              font-family: &quot;Inter&quot;, sans-serif;
+              margin-bottom: 24px;
+            "
+          >
+            <div
+              style="
+                color: #ffffff;
+                font-weight: 900;
+                font-size: 1.4rem;
+                letter-spacing: -0.5px;
+                line-height: 1;
+              "
+            >
+              Planeta Azul
+            </div>
+            <div
+              style="
+                color: #93c5fd;
+                font-weight: 500;
+                font-size: 0.85rem;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                margin-top: 4px;
+              "
+            >
+              Bebidas
+            </div>
+          </div>
+          <h1 style="font-size: 1.8rem; margin-bottom: 4px">Finanzas</h1>
+          <p>Análisis Financiero</p>
+        </div>
+
+        <nav class="menu">
+          <div class="menu-item">
+            <a href="#" id="menu-kpi" class="active">KPI Dashboard</a>
+          </div>
+          <div class="menu-item">
+            <a href="#" id="menu-resumen">Resumen Ejecutivo</a>
+          </div>
+          <div class="menu-item">
+            <a href="#" id="menu-pnl">P&L Detallado</a>
+          </div>
+          <div class="menu-item">
+            <a href="#" id="menu-balance">Balance Sheet</a>
+          </div>
+          <div class="menu-item">
+            <a href="#" id="menu-cashflow">Cash Flow</a>
+          </div>
+          <div class="menu-item">
+            <a href="#" id="menu-estados">Estados Financieros</a>
+          </div>
+          <div class="menu-item">
+            <a href="#" id="menu-config">Configuración</a>
+          </div>
+          <div class="menu-item">
+            <a href="#" id="menu-glosario">Glosario Financiero</a>
+          </div>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 8px;">
+        <div id="sidebarSyncStatus" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; color: rgba(255, 255, 255, 0.7);">
+          <div style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--warning);" id="sidebarSyncDot"></div>
+          <span id="sidebarSyncText">Desconectado</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-container">
+      <header class="header-section">
+        <div class="header-info">
+          <h2 id="titleLabel">Dashboard de Gestión Corporativa (RD$)</h2>
+          <div id="periodContainer" style="display: flex; gap: 12px; align-items: center">
+            <p id="periodLabel">Periodo de Análisis: Esperando datos...</p>
+            <div id="integrityBadge" style="display: none"></div>
+          </div>
+        </div>
+        <div
+          class="header-actions"
+          style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap"
+        >
+          <div id="searchContainerWrapper" class="search-container" style="position: relative; display: none; align-items: center;">
+            <i data-lucide="search" style="position: absolute; left: 12px; width: 18px; height: 18px; color: var(--text-secondary);"></i>
+            <input type="text" id="accountSearch" placeholder="Buscar cuenta..." style="padding: 10px 16px 10px 38px; border-radius: 12px; border: 1px solid var(--border); background: white; font-weight: 500; font-size: 0.9rem; color: var(--text-primary); outline: none; width: 100%; max-width: 200px;">
+          </div>
+          <select
+            id="monthSelector"
+            style="
+              padding: 10px 16px;
+              border-radius: 12px;
+              border: 1px solid var(--border);
+              background: white;
+              font-weight: 700;
+              cursor: pointer;
+              display: none;
+              color: var(--sidebar);
+            "
+          >
+            <option value="">Seleccionar Mes</option>
+          </select>
+        </div>
+      </header>
+
+      <style>
+        .bar-container {
+          width: 100px;
+          height: 8px;
+          background: #f1f5f9;
+          border-radius: 4px;
+          overflow: hidden;
+          display: inline-block;
+          vertical-align: middle;
+          margin-left: 12px;
+        }
+        .bar-fill {
+          height: 100%;
+          background: var(--primary);
+          border-radius: 4px;
+        }
+        .integrity-ok {
+          background: #dcfce7;
+          color: #166534;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .integrity-fail {
+          background: #fee2e2;
+          color: #991b1b;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+      </style>
+
+      <!-- View 0: KPI Dashboard -->
+      <div id="view-kpi" class="view-container active">
+        <section id="dashboard-main-kpis">
+          <h3 style="margin-bottom: 20px; font-weight: 500; color: var(--text)">
+            Métricas Principales
+          </h3>
+          <div class="kpi-scorecard-grid">
+            <!-- Main KPI Cards with Sparklines -->
+            <div class="score-card">
+              <div class="score-label">Ingresos de Ventas</div>
+              <div class="score-value" id="dash-ingresos">$0.0M</div>
+              <div class="score-trend" id="trend-ingresos">0.0%</div>
+              <div class="sparkline-container" id="spark-ingresos"></div>
+            </div>
+            <div class="score-card">
+              <div class="score-label">EBITDA</div>
+              <div class="score-value" id="dash-ebitda">$0.0M</div>
+              <div class="score-trend" id="trend-ebitda">0.0%</div>
+              <div class="sparkline-container" id="spark-ebitda"></div>
+            </div>
+            <div class="score-card hide-on-mobile">
+              <div class="score-label">Utilidad Neta</div>
+              <div class="score-value" id="dash-utilidad">$0.0M</div>
+              <div class="score-trend" id="trend-utilidad">0.0%</div>
+              <div class="sparkline-container" id="spark-utilidad"></div>
+            </div>
+            <div class="score-card">
+              <div
+                class="score-label"
+                style="display: flex; align-items: center; gap: 6px"
+              >
+                Caja (Saldo Final)
+                <span
+                  class="info-tooltip-trigger"
+                  data-tooltip="<strong>Salud de Caja</strong><br/>Representa la liquidez inmediata disponible (Saldo Final de Efectivo)."
+                  style="cursor: help; display: flex; align-items: center"
+                >
+                  <i
+                    data-lucide="info"
+                    style="width: 14px; height: 14px; opacity: 0.6"
+                  ></i>
+                </span>
+              </div>
+              <div class="score-value" id="dash-cash">$0.0M</div>
+              <div class="score-trend" id="trend-cash">0.0%</div>
+              <div class="sparkline-container" id="spark-cash"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="dashboard-yoy-kpis" class="hide-on-mobile">
+          <h3
+            style="
+              margin-bottom: 20px;
+              margin-top: 10px;
+              font-weight: 500;
+              color: var(--text);
+            "
+          >
+            Variación Interanual (YoY)
+          </h3>
+          <div class="kpi-secondary-grid">
+            <div class="ratio-card">
+              <div class="ratio-label">Ingresos YoY</div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="yoy-ingresos">--</div>
+                <div class="ratio-status" id="yoy-status-ingresos">-</div>
+              </div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-label">EBITDA YoY</div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="yoy-ebitda">--</div>
+                <div class="ratio-status" id="yoy-status-ebitda">-</div>
+              </div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-label">Utilidad Neta YoY</div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="yoy-utilidad">--</div>
+                <div class="ratio-status" id="yoy-status-utilidad">-</div>
+              </div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-label">Caja YoY</div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="yoy-caja">--</div>
+                <div class="ratio-status" id="yoy-status-caja">-</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="dashboard-ratios">
+          <h3
+            style="
+              margin-bottom: 20px;
+              margin-top: 10px;
+              font-weight: 500;
+              color: var(--text);
+            "
+          >
+            Ratios de Rentabilidad y Solvencia
+          </h3>
+          <div class="kpi-secondary-grid">
+            <div class="ratio-card hide-on-mobile">
+              <div class="ratio-label">
+                Margen Bruto
+                <span
+                  class="info-tooltip-trigger"
+                  data-tooltip="<strong>Margen Bruto</strong><br/>(Ingresos - Costo de Ventas) / Ingresos."
+                  style="cursor: help"
+                >
+                  <i
+                    data-lucide="info"
+                    style="width: 14px; height: 14px; opacity: 0.6"
+                  ></i>
+                </span>
+              </div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="dash-margen-bruto">0.0%</div>
+                <div class="ratio-status" id="status-margen-bruto">Estable</div>
+              </div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-label">Margen Neto</div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="dash-margen-neto">0.0%</div>
+                <div class="ratio-status" id="status-margen-neto">Estable</div>
+              </div>
+            </div>
+            <div class="ratio-card hide-on-mobile">
+              <div class="ratio-label">
+                ROA (Rentabilidad Activos)
+                <span
+                  class="info-tooltip-trigger"
+                  data-tooltip="<strong>ROA (Return on Assets)</strong><br/>Utilidad Neta Anualizada / Activos Totales. Mide la eficiencia en el uso de los activos de la empresa."
+                  style="cursor: help"
+                >
+                  <i
+                    data-lucide="info"
+                    style="width: 14px; height: 14px; opacity: 0.6"
+                  ></i>
+                </span>
+              </div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="dash-roa">0.0%</div>
+                <div class="ratio-status" id="status-roa">Estable</div>
+              </div>
+            </div>
+            <div class="ratio-card hide-on-mobile">
+              <div class="ratio-label">
+                ROE (Rentabilidad Capital)
+                <span
+                  class="info-tooltip-trigger"
+                  data-tooltip="<strong>ROE (Return on Equity)</strong><br/>Utilidad Neta Anualizada / Patrimonio."
+                  style="cursor: help"
+                >
+                  <i
+                    data-lucide="info"
+                    style="width: 14px; height: 14px; opacity: 0.6"
+                  ></i>
+                </span>
+              </div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="dash-roe">0.0%</div>
+                <div class="ratio-status" id="status-roe">Estable</div>
+              </div>
+            </div>
+            <div class="ratio-card hide-on-mobile">
+              <div class="ratio-label">
+                Apalancamiento (Deuda/EBITDA)
+                <span
+                  class="info-tooltip-trigger"
+                  data-tooltip="<strong>Solvencia (Ratio)</strong><br/>Ratio Deuda Total / EBITDA LTM (Anualizado). Mide cuántos años de EBITDA anual se necesitan para pagar la deuda total."
+                  style="cursor: help"
+                >
+                  <i
+                    data-lucide="info"
+                    style="width: 14px; height: 14px; opacity: 0.6"
+                  ></i>
+                </span>
+              </div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="dash-lev">0.0x</div>
+                <div class="ratio-status" id="status-lev">Estable</div>
+              </div>
+            </div>
+            <div class="ratio-card hide-on-mobile">
+              <div class="ratio-label">
+                Ciclo Conversión Efectivo (CCC)
+                <span
+                  class="info-tooltip-trigger"
+                  data-tooltip="<strong>Ciclo de Conversión de Efectivo</strong><br/>Días promedio que tarda la empresa en convertir sus inventarios y otros recursos en flujos de efectivo. (DSO + DIO - DPO)."
+                  style="cursor: help"
+                >
+                  <i
+                    data-lucide="info"
+                    style="width: 14px; height: 14px; opacity: 0.6"
+                  ></i>
+                </span>
+              </div>
+              <div class="ratio-value-row">
+                <div class="ratio-value" id="dash-ccc">0 días</div>
+                <div class="ratio-status" id="status-ccc">Estable</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="dashboard-charts" class="dashboard-charts-grid">
+          <div class="chart-box">
+            <div class="chart-header">
+              <h4>Evolución Mensual de Ebitda %</h4>
+              <p>Últimos 12 meses</p>
+            </div>
+            <div id="marginChart" style="height: 250px; width: 100%"></div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-header">
+              <h4>Evolución del Flujo de Caja</h4>
+              <p>Flujo Neto Mensual</p>
+            </div>
+            <div id="cashFlowChart" style="height: 250px; width: 100%"></div>
+          </div>
+        </section>
+
+        <section id="dashboard-alerts-section" class="section-table">
+          <div class="table-header">
+            <h3>Alertas de Salud Financiera</h3>
+            <span>Detección Automática de Riesgos</span>
+          </div>
+          <div
+            id="alertsContainer"
+            class="alerts-grid"
+            style="padding: 0 32px 24px 32px"
+          >
+            <div class="alert-placeholder">
+              Cargue datos para generar alertas inteligentes...
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- View 1: Resumen Ejecutivo -->
+      <div id="view-resumen" class="view-container">
+        <!-- P&L Main Cards -->
+        <section class="kpi-grid">
+          <div class="card">
+            <div class="card-label">Ingresos Netos</div>
+            <div class="card-value" id="kpi-ventas">$0.0M</div>
+            <p class="card-trend" id="sub-ventas">Cargue datos para análisis</p>
+          </div>
+          <div class="card">
+            <div class="card-label">Costo de Ventas</div>
+            <div class="card-value" id="val-ratio">$0.0M</div>
+            <p class="card-trend" id="sub-ratio">Variación vs mes ant.</p>
+          </div>
+          <div class="card">
+            <div class="card-label">EBITDA</div>
+            <div class="card-value" id="kpi-ebitda">$0.0M</div>
+            <p class="card-trend" id="sub-ebitda">Margen: 0.0%</p>
+          </div>
+        </section>
+
+        <!-- 1. Operative Indicators Table (Moved to top) -->
+        <section class="section-table">
+          <div class="table-header">
+            <h3>Principales Indicadores Operativos</h3>
+            <span
+              id="tablePeriod"
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+              "
+              >Tendencia Mensual</span
+            >
+          </div>
+          <table id="tableResumenOperativo" class="desktop-only-table">
+            <thead>
+              <tr>
+                <th>Categoría Financiera</th>
+                <th>Periodo Previo</th>
+                <th>Periodo Actual</th>
+                <th>Var. Absoluta</th>
+                <th>Var. %</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr>
+                <td
+                  colspan="5"
+                  style="
+                    text-align: center;
+                    padding: 40px;
+                    color: var(--text-secondary);
+                    font-style: italic;
+                  "
+                >
+                  Cargue un reporte de Excel para visualizar el desglose
+                  detallado.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="resumenOperativoMobileContainer" style="display: none;"></div>
+        </section>
+
+        <!-- 2. Sales Segment Breakdown Table -->
+        <section
+          class="section-table"
+          id="segments-section"
+          style="display: none"
+        >
+          <div class="table-header">
+            <h3>Ventas por Segmento Estratégico</h3>
+            <span
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+              "
+              >Contribución al Ingreso</span
+            >
+          </div>
+          <table id="tableVentasSegmento" class="desktop-only-table">
+            <thead>
+              <tr>
+                <th>Segmento de Negocio</th>
+                <th>Periodo Previo</th>
+                <th>Periodo Actual</th>
+                <th>Var. Absoluta</th>
+                <th>% Part.</th>
+              </tr>
+            </thead>
+            <tbody id="segmentsBody"></tbody>
+          </table>
+          <div id="ventasSegmentoMobileContainer" style="display: none;"></div>
+        </section>
+
+        <!-- 3. Cost Segment Breakdown Table (New) -->
+        <section
+          class="section-table"
+          id="cost-segments-section"
+          style="display: none"
+        >
+          <div class="table-header">
+            <h3>Costos por Segmento Estratégico</h3>
+            <span
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+              "
+              >Desglose de Costos de Venta</span
+            >
+          </div>
+          <table id="tableCostosSegmento" class="desktop-only-table">
+            <thead>
+              <tr>
+                <th>Segmento de Negocio</th>
+                <th>Periodo Previo</th>
+                <th>Periodo Actual</th>
+                <th>Var. Absoluta</th>
+                <th>Var. %</th>
+              </tr>
+            </thead>
+            <tbody id="costSegmentsBody"></tbody>
+          </table>
+          <div id="costosSegmentoMobileContainer" style="display: none;"></div>
+        </section>
+
+        <!-- 4. OPEX Breakdown Table -->
+        <section class="section-table" id="opex-section" style="display: none">
+          <div class="table-header">
+            <h3>Análisis de Gastos Operativos (OPEX)</h3>
+            <span
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+              "
+              >Detalle de Egresos por Categoría</span
+            >
+          </div>
+          <table id="tableOpex" class="desktop-only-table">
+            <thead>
+              <tr>
+                <th>Categoría de Gasto</th>
+                <th>Periodo Previo</th>
+                <th>Periodo Actual</th>
+                <th>Var. Absoluta</th>
+                <th>Var. %</th>
+              </tr>
+            </thead>
+            <tbody id="opexBody"></tbody>
+          </table>
+          <div id="opexMobileContainer" style="display: none;"></div>
+        </section>
+      </div>
+
+      <!-- View 2: P&L Detallado -->
+      <div id="view-pnl" class="view-container">
+        <div class="table-header">
+          <h3>Estado de Resultados Detallado (P&L)</h3>
+          <span
+            id="pnlPeriodLabel"
+            style="
+              font-size: 0.85rem;
+              font-weight: 600;
+              color: var(--text-secondary);
+            "
+            >Evolución Mensual en Millones RD$</span
+          >
+        </div>
+        <div class="pnl-detail-table" style="position: relative;">
+          <table id="pnlDetailedTable" class="desktop-only-table">
+            <thead id="pnlDetailedHeader"></thead>
+            <tbody id="pnlDetailedBody">
+              <tr>
+                <td
+                  style="
+                    text-align: center;
+                    padding: 40px;
+                    color: var(--text-secondary);
+                    font-style: italic;
+                  "
+                >
+                  Cargue un archivo para generar el P&L completo.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="pnlMobileContainer" style="display: none;"></div>
+        </div>
+      </div>
+
+      <!-- View: Balance Sheet -->
+      <div id="view-balance" class="view-container">
+        <div class="table-header">
+          <h3>Balance General Consolidado</h3>
+          <span
+            id="balancePeriodLabel"
+            style="
+              font-size: 0.85rem;
+              font-weight: 600;
+              color: var(--text-secondary);
+            "
+            >Situación Financiera al Cierre</span
+          >
+        </div>
+        <div class="pnl-detail-table" style="position: relative;">
+          <table id="balanceTable" class="desktop-only-table">
+            <thead id="balanceHeader"></thead>
+            <tbody id="balanceBody">
+              <tr>
+                <td
+                  style="
+                    text-align: center;
+                    padding: 40px;
+                    color: var(--text-secondary);
+                    font-style: italic;
+                  "
+                >
+                  Cargue un archivo para generar el Balance General.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="balanceMobileContainer" style="display: none;"></div>
+        </div>
+
+        <!-- New Section: Covenant Deuda -->
+        <div id="covenant-section" style="margin-top: 32px; display: none">
+          <div
+            class="table-header"
+            style="
+              background: var(--sidebar);
+              color: white;
+              padding: 12px 24px;
+              border-radius: 12px 12px 0 0;
+              border: 1px solid var(--sidebar);
+            "
+          >
+            <h3
+              style="
+                color: white;
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+              "
+            >
+              Covenant Deuda
+            </h3>
+          </div>
+          <div
+            class="pnl-detail-table"
+            style="
+              margin-top: 0;
+              border-radius: 0 0 12px 12px;
+              border-top: none;
+              position: relative;
+            "
+          >
+            <table id="covenantTable" class="desktop-only-table">
+              <thead id="covenantHeader"></thead>
+              <tbody id="covenantBody"></tbody>
+            </table>
+            <div id="covenantMobileContainer" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View: Cash Flow -->
+      <div id="view-cashflow" class="view-container">
+        <div class="table-header">
+          <h3>Estado de Flujo de Efectivo</h3>
+          <span
+            id="cashflowPeriodLabel"
+            style="
+              font-size: 0.85rem;
+              font-weight: 600;
+              color: var(--text-secondary);
+            "
+            >Análisis de origen y aplicación de recursos</span
+          >
+        </div>
+
+        <div class="pnl-detail-table" style="position: relative;">
+          <table id="cashflowTable" class="desktop-only-table">
+            <thead id="cashflowHeader"></thead>
+            <tbody id="cashflowBody">
+              <tr>
+                <td
+                  style="
+                    text-align: center;
+                    padding: 40px;
+                    color: var(--text-secondary);
+                    font-style: italic;
+                  "
+                >
+                  Cargue un archivo con la hoja "Cash-Flow" para generar este
+                  reporte.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="cashflowMobileContainer" style="display: none;"></div>
+        </div>
+
+        <!-- Operating Metrics Section -->
+        <div id="cf-metrics-section" style="margin-top: 32px; display: none">
+          <div
+            class="table-header"
+            style="
+              background: var(--info);
+              color: white;
+              padding: 12px 24px;
+              border-radius: 12px 12px 0 0;
+              border: 1px solid var(--info);
+            "
+          >
+            <h3
+              style="
+                color: white;
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+              "
+            >
+              Métricas de Eficiencia Operativa (Ciclo de Caja)
+            </h3>
+          </div>
+          <div
+            class="pnl-detail-table"
+            style="
+              margin-top: 0;
+              border-radius: 0 0 12px 12px;
+              border-top: none;
+              position: relative;
+            "
+          >
+            <table id="cfMetricsTable" class="desktop-only-table">
+              <thead id="cfMetricsHeader"></thead>
+              <tbody id="cfMetricsBody"></tbody>
+            </table>
+            <div id="cfMetricsMobileContainer" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View 3: Configuración / Auditoría -->
+      <div id="view-config" class="view-container">
+        <div class="table-header">
+          <h3>Configuración y Auditoría de Datos</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary)">
+            Herramientas de validación y estado de la Inteligencia Financiera.
+          </p>
+        </div>
+
+        <div class="card" id="dropZone" style="margin-top: 24px; margin-bottom: 24px; max-width: 600px;">
+          <h4 style="margin-bottom: 12px; font-size: 1rem; color: var(--sidebar); display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="database" style="width: 18px; height: 18px"></i>
+            Gestión de Conexión y Datos
+          </h4>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+            Conecte el dashboard a la fuente de datos maestra en Office 365 o cargue un archivo automáticamentee como respaldo.
+          </p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; flex-direction: column;">
+            <button id="loginM365Btn" class="upload-btn" style="background: #0f172a; margin-top: 0; display: flex; align-items: center; justify-content: center; gap: 8px; width: fit-content; padding: 10px 24px;">
+              <i data-lucide="cloud" style="width: 16px; height: 16px;"></i>
+              Conectar Office 365
+            </button>
+
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Alternativo</span>
+
+            <label for="fileInput" class="upload-btn" style="margin-top: 0; width: fit-content; padding: 10px 24px;">Cargar Manual</label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display: none;" />
+          </div>
+        </div>
+
+        <div
+          class="card"
+          style="
+            margin-top: 24px;
+            margin-bottom: 24px;
+            max-width: 600px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          "
+        >
+          <h4
+            style="
+              margin-bottom: 12px;
+              font-size: 1rem;
+              color: var(--sidebar);
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            "
+          >
+            <i
+              data-lucide="download-cloud"
+              style="width: 18px; height: 18px"
+            ></i>
+            Centro de Descarga de Reportes Corporativos
+          </h4>
+          <p
+            style="
+              font-size: 0.85rem;
+              color: var(--text-secondary);
+              margin-bottom: 16px;
+            "
+          >
+            Exporte el Dashboard Ejecutivo en formatos profesionales.
+          </p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap">
+            <button
+              id="btnExportPDF"
+              class="upload-btn"
+              style="width: auto; margin-top: 0; background: var(--danger)"
+            >
+              <i
+                data-lucide="file-text"
+                style="
+                  width: 16px;
+                  height: 16px;
+                  display: inline-block;
+                  vertical-align: middle;
+                  margin-right: 4px;
+                "
+              ></i
+              >Exportar a PDF
+            </button>
+            <button
+              id="btnExportExcel"
+              class="upload-btn"
+              style="width: auto; margin-top: 0; background: var(--success)"
+            >
+              <i
+                data-lucide="file-spreadsheet"
+                style="
+                  width: 16px;
+                  height: 16px;
+                  display: inline-block;
+                  vertical-align: middle;
+                  margin-right: 4px;
+                "
+              ></i
+              >Exportar a Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 24px; max-width: 600px">
+          <h4
+            style="
+              margin-bottom: 12px;
+              font-size: 0.9rem;
+              color: var(--sidebar);
+            "
+          >
+            Estado de Detección de Datos
+          </h4>
+          <p
+            style="
+              font-size: 0.8rem;
+              color: var(--text-secondary);
+              margin-bottom: 16px;
+            "
+          >
+            Este registro muestra cómo el motor de IA ha mapeado los nombres de
+            sus cuentas de Excel a los indicadores del Dashboard.
+          </p>
+          <div id="engineStatus">
+            Esperando la carga de un archivo para iniciar la auditoría de
+            mapeo...
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 24px; max-width: 600px">
+          <h4
+            style="
+              margin-bottom: 12px;
+              font-size: 0.9rem;
+              color: var(--sidebar);
+            "
+          >
+            Información del Sistema
+          </h4>
+          <ul
+            style="
+              font-size: 0.8rem;
+              color: var(--text-secondary);
+              list-style: none;
+              padding: 0;
+            "
+          >
+            <li style="margin-bottom: 8px">
+              <b>Motor:</b> IA Híbrida (Reglas + LLM)
+            </li>
+            <li style="margin-bottom: 8px">
+              <b>Formato Soportado:</b> Reporte PA (Estructurado/Ancho)
+            </li>
+            <li>
+              <b>Lógica de Variación:</b> Actual - Previo (Positivo = Verde)
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- View 6: Estados Financieros -->
+      <div id="view-estados" class="view-container">
+        <section class="section-table">
+          <div class="table-header">
+            <h3>Estados Financieros y KPIs</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary)">
+              Análisis detallado de todos los rubros detectados.
+            </p>
+          </div>
+          <div class="pnl-detail-table" style="margin-top: 16px; position: relative;">
+            <table id="table-estados" class="desktop-only-table">
+              <thead id="header-estados">
+                <!-- Dynamic columns -->
+              </thead>
+              <tbody id="body-estados">
+                <!-- Dynamic rows -->
+              </tbody>
+            </table>
+            <div id="estadosMobileContainer" style="display: none;"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- View 7: Glosario -->
+      <div id="view-glosario" class="view-container">
+        <style>
+          #view-glosario .glosario-cat {
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: white;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+          }
+          #view-glosario .glosario-cat summary {
+            font-weight: 800;
+            padding: 18px 24px;
+            cursor: pointer;
+            background: linear-gradient(to right, #f8fafc, #ffffff);
+            color: var(--sidebar);
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            font-size: 1.15rem;
+            user-select: none;
+          }
+          #view-glosario .glosario-cat summary:hover {
+            background: #f1f5f9;
+          }
+          #view-glosario .glosario-cat summary::-webkit-details-marker {
+            display: none;
+          }
+          #view-glosario .glosario-cat summary svg {
+            transition: transform 0.2s ease;
+            width: 24px;
+            height: 24px;
+            color: var(--primary);
+          }
+          #view-glosario .glosario-cat[open] summary svg {
+            transform: rotate(180deg);
+          }
+          #view-glosario .glosario-cat[open] summary {
+            border-bottom: 1px solid var(--border);
+          }
+          #view-glosario .glosario-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            background: white;
+            padding: 24px;
+          }
+          #view-glosario .glosario-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition:
+              transform 0.2s ease,
+              box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-top: 4px solid var(--sidebar);
+          }
+          #view-glosario .glosario-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+          }
+          #view-glosario .glosario-card-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--sidebar);
+            margin-bottom: 4px;
+          }
+          #view-glosario .glosario-card-formula {
+            background: #f8fafc;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-family: "JetBrains Mono", ui-monospace, monospace;
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid var(--primary);
+            word-break: break-word;
+          }
+          #view-glosario .glosario-card-def {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            flex: 1;
+          }
+          #view-glosario .card-icon {
+            color: var(--primary);
+            margin-right: 6px;
+          }
+          @media screen and (max-width: 767px) {
+            #view-glosario .glosario-grid {
+              padding: 16px;
+            }
+          }
+          @media screen and (min-width: 768px) {
+            #view-glosario .glosario-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+          @media screen and (min-width: 1200px) {
+            #view-glosario .glosario-grid {
+              grid-template-columns: repeat(3, 1fr);
+            }
+          }
+
+          /* Enhanced layout for sticky header and internal scroll if needed */
+          #view-glosario.active {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+          }
+
+          #view-glosario > .table-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: var(--bg);
+            margin: 10px -40px 24px -40px;
+            padding: 16px 40px 16px 40px;
+            border-bottom: 2px solid var(--border);
+          }
+        </style>
+        <div class="table-header">
+          <div>
+            <p
+              style="
+                font-size: 0.95rem;
+                color: var(--text-secondary);
+                margin: 0;
+              "
+            >
+              Definiciones analíticas, importancia estratégica y fórmulas de los
+              principales indicadores corporativos presentes en el Dashboard.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <!-- Categoría 1: Rentabilidad -->
+          <details class="glosario-cat" open>
+            <summary>
+              <span style="display: flex; align-items: center"
+                ><i data-lucide="trending-up" class="card-icon"></i> Torre de
+                Control y Rentabilidad</span
+              >
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="glosario-grid">
+              <div class="glosario-card">
+                <div class="glosario-card-title">EBITDA</div>
+                <div class="glosario-card-def">
+                  El indicador rey de la gestión operativa. Mide la verdadera
+                  capacidad de la empresa para generar caja desde su negocio
+                  principal (Core Business), ignorando políticas fiscales o
+                  decisiones de apalancamiento que no dependen directamente de
+                  la operación.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i>
+                  Utilidad Bruta - Gastos Operativos
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Margen EBITDA (%)</div>
+                <div class="glosario-card-def">
+                  Determina la eficiencia operativa. Responde a la pregunta del
+                  CEO: "¿De cada $1 vendido, cuánto se convierte en ganancia
+                  operativa en efectivo?". Un margen que se reduce indica un
+                  problema de control de gastos.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="percent" width="16" height="16"></i> (EBITDA /
+                  Ingresos Totales) * 100
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Utilidad Neta (Beneficio)</div>
+                <div class="glosario-card-def">
+                  El renglón final del P&L ("The Bottom Line"). Es la ganancia o
+                  pérdida final después de haber pagado proveedores, empleados,
+                  bancos e impuestos. Es el monto disponible para repartir a los
+                  socios o reinvertir.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i> EBITDA
+                  - Deprec. - Intereses - Impuestos
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Margen Neto (%)</div>
+                <div class="glosario-card-def">
+                  El porcentaje final de ingresos que se retiene como beneficio.
+                  Una empresa con ventas masivas pero márgenes netos del 1% es
+                  altamente vulnerable a cualquier shock económico porque
+                  absorbe poco.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="percent" width="16" height="16"></i> (Utilidad
+                  Neta / Ingresos Totales) * 100
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Margen Bruto (%)</div>
+                <div class="glosario-card-def">
+                  Indica la salud de la estructura de precios y el poder de
+                  negociación con proveedores. Responde a la pregunta: "¿Es
+                  rentable producir/vender nuestro producto independientemente
+                  de nuestros gastos administrativos?".
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="percent" width="16" height="16"></i> (Utilidad
+                  Bruta / Ingresos) * 100
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">ROA (Return on Assets)</div>
+                <div class="glosario-card-def">
+                  Mide qué tan eficiente es la gerencia utilizando la
+                  infraestructura, equipos y cuentas disponibles de la empresa
+                  para generar beneficios. Un ROA bajo sugiere activos
+                  improductivos.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i>
+                  (Utilidad Neta LTM / Activos Totales) * 100
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">ROE (Return on Equity)</div>
+                <div class="glosario-card-def">
+                  El indicador definitivo para los inversionistas. Muestra
+                  cuántos dólares de ganancia se generan por cada dólar que han
+                  aportado los dueños del negocio como capital.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i>
+                  (Utilidad Neta LTM / Patrimonio) * 100
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Categoría 2: Liquidez y Solvencia -->
+          <details class="glosario-cat">
+            <summary>
+              <span style="display: flex; align-items: center"
+                ><i data-lucide="shield-check" class="card-icon"></i> Solvencia
+                y Apalancamiento</span
+              >
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="glosario-grid">
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  Apalancamiento (Deuda / EBITDA)
+                </div>
+                <div class="glosario-card-def">
+                  El ratio de riesgo bancario definitivo (Covenant). Mueve la
+                  brújula financiera; indica cuántos años enteros de operaciones
+                  (EBITDA) se requieren para liquidar la deuda. Un número
+                  superior a 3.0x suele disparar alarmas.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i> Deuda
+                  Total (o Neta) / LTM EBITDA
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Razón Corriente</div>
+                <div class="glosario-card-def">
+                  Medida de liquidez indispensable. ¿Si los acreedores a corto
+                  plazo llaman hoy a cobrar toda la deuda, puede la empresa
+                  pagarles liquidando todo el corto plazo?. Ideal mayor a 1.2x -
+                  1.5x.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="divide" width="16" height="16"></i> Activos
+                  Corrientes / Pasivos Corrientes
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  LTM EBITDA (Last 12 Months)
+                </div>
+                <div class="glosario-card-def">
+                  Suma rotativa del EBITDA de los últimos 12 meses. Es el valor
+                  estandarizado usado en el levantamiento bancario para medir y
+                  entender el volumen operativo anual del negocio en cualquier
+                  mes medio del año.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="sigma" width="16" height="16"></i> Σ EBITDA
+                  (Mes actual a Mes - 11)
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Deuda Bruta / Deuda Total</div>
+                <div class="glosario-card-def">
+                  La suma total de todas las obligaciones acumuladas que
+                  devengan intereses (facilidades de crédito, bonos,
+                  corporativos, corto y largo plazo). Representa el peso
+                  financiado institucionalmente.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="plus" width="16" height="16"></i> Préstamos
+                  Corto Plazo + Préstamos Largo Plazo
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Deuda Neta</div>
+                <div class="glosario-card-def">
+                  El verdadero nivel de endeudamiento exigible tomando en cuenta
+                  el "colchón" de efectivo puro que la empresa podría usar
+                  instantáneamente para amortizar al banco de inmediato.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="minus" width="16" height="16"></i> Deuda Bruta
+                  - Saldo de Tesorería (Efectivo/Bancos)
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Deuda Subordinada</div>
+                <div class="glosario-card-def">
+                  Pasivos que, ante escenarios críticos de liquidación de
+                  activos, tienen menor prioridad legal de pago que la deuda
+                  principal bancaria comercial. Sirve usualmente para financiar
+                  a riesgo y rebalancear la ecuación patrimonial.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="dollar-sign" width="16" height="16"></i>
+                  Pasivos Subordinados Intercompañía / Socios
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  Deuda Neta sin Subordinada
+                </div>
+                <div class="glosario-card-def">
+                  El endeudamiento puro con terceros (bancos). Al excluir la
+                  deuda de los propios socios (subordinada), esta métrica
+                  muestra la exposición financiera real ante el mercado externo.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="minus" width="16" height="16"></i> Deuda Neta
+                  - Deuda Subordinada
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Capacidad de Pago</div>
+                <div class="glosario-card-def">
+                  Refleja la solvencia integral. Cuanta cobertura en fondos
+                  líquidos o semi-líquidos posee la estructura organizacional
+                  para soportar todas las obligaciones financieras vigentes de
+                  crédito bancario.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i>
+                  (Efectivo + Ingresos a recibir) / Obligaciones Totales
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Categoría 3: Ciclo Operativo -->
+          <details class="glosario-cat">
+            <summary>
+              <span style="display: flex; align-items: center"
+                ><i data-lucide="refresh-cw" class="card-icon"></i> Eficiencia
+                Operativa y Capital de Trabajo</span
+              >
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="glosario-grid">
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  Ciclo de Conversión de Efectivo (CCC)
+                </div>
+                <div class="glosario-card-def">
+                  Mide en días cuánto se tarda el inventario total comprado en
+                  convertirse en 1 peso bancario cobrado. Mientras mayor sea
+                  este lapso de días, la empresa tendrá un "hueco natural" que
+                  financiar con caja quemada.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i> DSO +
+                  DIO - DPO
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  DSO (Días Cuentas por Cobrar)
+                </div>
+                <div class="glosario-card-def">
+                  Days Sales Outstanding. El tiempo vital que la empresa espera
+                  para recibir en caja facturas de crédito de clientes. Crecidas
+                  en este nivel estresan el oxígeno para seguir generando la
+                  materia.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calendar" width="16" height="16"></i> (Cuentas
+                  por Cobrar / Ventas LTM) * 365
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  DIO (Días Rotación Inventario)
+                </div>
+                <div class="glosario-card-def">
+                  Days Inventory Outstanding. Tiempo que descansa la materia
+                  prima o el producto terminado en las naves antes de lograr una
+                  salida. DIOs muy extensos alertan el riesgo de daño u
+                  obsolescencias.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calendar" width="16" height="16"></i>
+                  (Inventarios / Costo de Ventas LTM) * 365
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  DPO (Días Cuentas por Pagar)
+                </div>
+                <div class="glosario-card-def">
+                  Days Payable Outstanding. Tiempo en que se retienen las
+                  partidas de los suplidores. Retrasar artificialmente esto
+                  engorda el efectivo interinamente (crédito natural) pero
+                  atenta la reputación corporativa comercial.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calendar" width="16" height="16"></i> (Cuentas
+                  por Pagar / Costo de Ventas LTM) * 365
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Costo de Ventas (COGS)</div>
+                <div class="glosario-card-def">
+                  Costo Directo imputable para manufacturar o brindar el bien
+                  final. Analiza la eficiencia primaria de producción incluyendo
+                  materias primas, aranceles, y nómina directa de plata, sin
+                  mezcla de gastos administrativos.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="box" width="16" height="16"></i> Inv. Inicial
+                  + Compras Manufactura - Inv. Final
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Gastos Operativos (OPEX)</div>
+                <div class="glosario-card-def">
+                  El costo de "encender las luces" y administrar el negocio.
+                  Engloba el gasto comercial permanente, directivo, salarios
+                  corporativos, software y marketing que la gerencia debe
+                  eficientizar siempre.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i> Ventas
+                  - Costo de Ventas - EBITDA + OtrosIngresos
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Categoría 4: Análisis Complementario (Cash Flow, CAPEX, P&L) -->
+          <details class="glosario-cat">
+            <summary>
+              <span style="display: flex; align-items: center"
+                ><i data-lucide="bar-chart-3" class="card-icon"></i> Flujo de
+                Caja Libre, Generación y Análisis Complementario</span
+              >
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="glosario-grid">
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  Flujo de Caja Neto (Variación)
+                </div>
+                <div class="glosario-card-def">
+                  La verdadera generación o consumo de efectivo en el período. A
+                  diferencia del Beneficio Neto (que incluye provisiones e
+                  intangibles), cuantifica los dólares reales que cruzaron la
+                  puerta del banco o caja general al cierre del mes.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="banknote" width="16" height="16"></i> F.
+                  Operativo + F. Inversión + F. Financiación
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Efectivo Inicial</div>
+                <div class="glosario-card-def">
+                  El balance histórico de caja que arrastraba la compañía del
+                  periodo contable / día anterior. Conforma el pivote para
+                  entender si el mes agregó agua al estanque o si simplemente
+                  nos bebimos la que estaba.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="wallet" width="16" height="16"></i> Saldo Caja
+                  Total al Fin de Periodo Previo
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  Efectivo Final (Salud de Caja)
+                </div>
+                <div class="glosario-card-def">
+                  El balance absoluto de la tesorería al corte del ejercicio
+                  analizado. Sirve para proyectar y entender con cuántos fondos
+                  líquidos reales la entidad comenzará su primer día de
+                  operación en el próximo ciclo.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="piggy-bank" width="16" height="16"></i>
+                  Efectivo Inicial + Flujo de Caja Neto de Periodo
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  CAPEX (Inversiones de Capital)
+                </div>
+                <div class="glosario-card-def">
+                  Grandes inversiones en bienes de capital para expandir la
+                  capacidad productiva de la empresa a largo plazo: nuevas
+                  flotillas, naves de manufactura, actualizaciones ERP,
+                  patentes. No va a P&L, sino a Activos.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="building" width="16" height="16"></i>
+                  Inversiones Extraordinarias en Activos Fijos
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Variación de Deuda Neta</div>
+                <div class="glosario-card-def">
+                  Diferencia entre la nueva deuda adquirida este período y la
+                  deuda histórica amortizada (repago capital); indica
+                  rápidamente si el mes ha tenido un enfoque netamente de
+                  apalancamiento para fondearse o de pago.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i> Nvos
+                  Desembolsos - Amortización de Principal
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Impuestos Pagados</div>
+                <div class="glosario-card-def">
+                  La cuota efectiva que sale de la caja de liquidez por
+                  conceptos fiscales durante el período en curso, aislando de
+                  esto cualquier retención por contabilidad, sólo lo que
+                  abandona la tesorería hacia las rentas correspondientes.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="file-check" width="16" height="16"></i> Salida
+                  de Efectivo por Pago Impuestos Fiscales
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Gastos Extraordinarios</div>
+                <div class="glosario-card-def">
+                  Partidas de costo no recurrentes bajo ningún motivo (litigios
+                  legales macro, indemnizaciones corporativas totales, pérdida
+                  de nave por daños naturales); de no separarse ensuciarían
+                  erróneamente el EBITDA.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="wallet" width="16" height="16"></i> Gastos
+                  Inusuales Fuera de la Operación Estándar
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  Variación YoY (Year-over-Year)
+                </div>
+                <div class="glosario-card-def">
+                  Compara el desempeño de un periodo específico frente al mismo
+                  del año anterior. Crucial para eliminar estadísticas de
+                  temporadas altas (ej. diciembre vs diciembre) y revelar un
+                  crecimiento orgánico real.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="calculator" width="16" height="16"></i> (Valor
+                  Periodo Actual / Valor Año Anterior) - 1
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">
+                  Integridad del P&L (Gap de Cuadre)
+                </div>
+                <div class="glosario-card-def">
+                  Prueba estricta de consistencia matemática del sistema
+                  automatizado. Evalúa si las grandes bolsas reportadas se
+                  igualan entre sí para garantizar que no hay fugas de datos de
+                  subcuentas desconocidas.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="check-circle" width="16" height="16"></i>
+                  Ingresos - Costos - OPEX - EBITDA = 0
+                </div>
+              </div>
+              <div class="glosario-card">
+                <div class="glosario-card-title">Tasa de Cambio (FX)</div>
+                <div class="glosario-card-def">
+                  El diferencial o coste implícito en la conversión a diferentes
+                  monedas de las partidas extranjeras para reportar y cuadrar
+                  centralizado en moneda local (RD$ a USD o viceversa); se
+                  refleja como gasto o ingreso no operativo.
+                </div>
+                <div class="glosario-card-formula">
+                  <i data-lucide="dollar-sign" width="16" height="16"></i>
+                  Ganancia / Pérdiga por Diferencial Cambiario
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </main>
+
+    <button class="floating-top-btn" id="scrollTopBtn">
+      <i data-lucide="chevron-up"></i>
+    </button>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

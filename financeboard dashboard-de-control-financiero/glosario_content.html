@@ -1,0 +1,284 @@
+                <style>
+            #view-glosario .glosario-cat {
+                margin-bottom: 24px;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                background: white;
+                box-shadow: var(--shadow);
+                overflow: hidden;
+            }
+            #view-glosario .glosario-cat summary {
+                font-weight: 800;
+                padding: 18px 24px;
+                cursor: pointer;
+                background: linear-gradient(to right, #f8fafc, #ffffff);
+                color: var(--sidebar);
+                list-style: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: background 0.2s;
+                font-size: 1.15rem;
+                user-select: none;
+            }
+            #view-glosario .glosario-cat summary:hover {
+                background: #f1f5f9;
+            }
+            #view-glosario .glosario-cat summary::-webkit-details-marker {
+                display: none;
+            }
+            #view-glosario .glosario-cat summary svg {
+                transition: transform 0.2s ease;
+                width: 24px;
+                height: 24px;
+                color: var(--primary);
+            }
+            #view-glosario .glosario-cat[open] summary svg {
+                transform: rotate(180deg);
+            }
+            #view-glosario .glosario-cat[open] summary {
+                border-bottom: 1px solid var(--border);
+            }
+            #view-glosario .glosario-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 20px;
+                background: white;
+                padding: 24px;
+            }
+            #view-glosario .glosario-card {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                border-top: 4px solid var(--sidebar);
+            }
+            #view-glosario .glosario-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+            #view-glosario .glosario-card-title {
+                font-size: 1.1rem;
+                font-weight: 800;
+                color: var(--sidebar);
+                margin-bottom: 4px;
+            }
+            #view-glosario .glosario-card-formula {
+                background: #f8fafc;
+                padding: 12px 14px;
+                border-radius: 8px;
+                font-family: 'JetBrains Mono', ui-monospace, monospace;
+                font-size: 0.85rem;
+                color: var(--primary);
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                border-left: 3px solid var(--primary);
+                word-break: break-word;
+            }
+            #view-glosario .glosario-card-def {
+                font-size: 0.9rem;
+                color: var(--text-secondary);
+                line-height: 1.6;
+                flex: 1;
+            }
+            #view-glosario .card-icon {
+                color: var(--primary);
+                margin-right: 6px;
+            }
+            @media screen and (max-width: 768px) {
+                #view-glosario .glosario-grid {
+                    grid-template-columns: 1fr;
+                    padding: 16px;
+                }
+            }
+        </style>
+        <div class="table-header">
+            <h3>Glosario de Términos y Metodologías Financieras</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Definiciones analíticas, importancia estratégica y fórmulas de los principales indicadores corporativos presentes en el Dashboard.</p>
+        </div>
+
+        <div style="margin-top: 24px;">
+
+            <!-- Categoría 1: Rentabilidad -->
+            <details class="glosario-cat" open>
+                <summary>
+                    <span style="display: flex; align-items: center;"><i data-lucide="trending-up" class="card-icon"></i> Torre de Control y Rentabilidad</span>
+                    <i data-lucide="chevron-down"></i>
+                </summary>
+                <div class="glosario-grid">
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">EBITDA</div>
+                        <div class="glosario-card-def">El indicador rey de la gestión operativa. Mide la verdadera capacidad de la empresa para generar caja desde su negocio principal (Core Business), ignorando políticas fiscales o decisiones de apalancamiento que no dependen directamente de la operación.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> Utilidad Bruta - Gastos Operativos</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Margen EBITDA (%)</div>
+                        <div class="glosario-card-def">Determina la eficiencia operativa. Responde a la pregunta del CEO: "¿De cada $1 vendido, cuánto se convierte en ganancia operativa en efectivo?". Un margen que se reduce indica un problema de control de gastos.</div>
+                        <div class="glosario-card-formula"><i data-lucide="percent" width="16" height="16"></i> (EBITDA / Ingresos Totales) * 100</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Margen Bruto (%)</div>
+                        <div class="glosario-card-def">Indica la salud de la estructura de precios y el poder de negociación con proveedores. Responde a la pregunta: "¿Es rentable producir/vender nuestro producto independientemente de nuestros gastos administrativos?".</div>
+                        <div class="glosario-card-formula"><i data-lucide="percent" width="16" height="16"></i> (Utilidad Bruta / Ingresos) * 100</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Utilidad Neta (Beneficio)</div>
+                        <div class="glosario-card-def">El renglón final del P&L ("The Bottom Line"). Es la ganancia o pérdida final después de haber pagado proveedores, empleados, bancos e impuestos. Es el monto disponible para repartir a los socios o reinvertir.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> EBITDA - Depreciación - Intereses - Impuestos</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Margen Neto (%)</div>
+                        <div class="glosario-card-def">El porcentaje final de ingresos que se retiene como beneficio. Una empresa con ventas masivas pero márgenes netos del 1% es altamente vulnerable a cualquier shock económico porque absorbe poco.</div>
+                        <div class="glosario-card-formula"><i data-lucide="percent" width="16" height="16"></i> (Utilidad Neta / Ingresos Totales) * 100</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">ROA (Return on Assets)</div>
+                        <div class="glosario-card-def">Mide qué tan eficiente es la gerencia utilizando la infraestructura, equipos y cuentas disponibles de la empresa para generar beneficios. Un ROA bajo sugiere activos improductivos.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> (Utilidad Neta LTM / Activos Totales) * 100</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">ROE (Return on Equity)</div>
+                        <div class="glosario-card-def">El indicador definitivo para los inversionistas. Muestra cuántos dólares de ganancia se generan por cada dólar que han aportado los dueños del negocio como capital.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> (Utilidad Neta LTM / Patrimonio) * 100</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Variación Interanual (YoY)</div>
+                        <div class="glosario-card-def">Compara el desempeño de un mes frente al mismo mes del año anterior. Crucial para eliminar el "ruído" estadístico de temporadas altas (ej. diciembre vs diciembre). Revela crecimiento real.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> (Valor Año Actual / Valor Año Anterior) - 1</div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Categoría 2: Liquidez y Solvencia -->
+            <details class="glosario-cat">
+                <summary>
+                    <span style="display: flex; align-items: center;"><i data-lucide="shield-check" class="card-icon"></i> Solvencia y Apalancamiento</span>
+                    <i data-lucide="chevron-down"></i>
+                </summary>
+                <div class="glosario-grid">
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Apalancamiento (Deuda / EBITDA)</div>
+                        <div class="glosario-card-def">El ratio de riesgo bancario definitivo (Covenant). Mueve la brújula financiera; indica cuántos años enteros de operaciones (EBITDA) se requieren para liquidar la deuda. Un número superior a 3.0x suele disparar alarmas.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> Deuda Total (o Neta) / LTM EBITDA</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Razón Corriente</div>
+                        <div class="glosario-card-def">Medida de liquidez indispensable. ¿Si los acreedores a corto plazo llaman hoy a cobrar toda la deuda, puede la empresa pagarles liquidando todo el corto plazo?. Ideal mayor a 1.2x - 1.5x.</div>
+                        <div class="glosario-card-formula"><i data-lucide="divide" width="16" height="16"></i> Activos Corrientes / Pasivos Corrientes</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Prueba Ácida</div>
+                        <div class="glosario-card-def">Versión profundamente estresada de la Razón Corriente. Excluye el inventario bajo la premisa de que "el inventario que no se ha vendido no es dinero rápido para una crisis comercial".</div>
+                        <div class="glosario-card-formula"><i data-lucide="divide" width="16" height="16"></i> (Activos Corr. - Inventarios) / Pasivos Corr.</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">LTM EBITDA (Last 12 Months)</div>
+                        <div class="glosario-card-def">Suma rotativa del EBITDA de los últimos 12 meses. Es el valor estandarizado usado en el levantamiento bancario para medir y entender el volumen operativo anual del negocio en cualquier mes medio del año.</div>
+                        <div class="glosario-card-formula"><i data-lucide="sigma" width="16" height="16"></i> Σ EBITDA (Mes actual a Mes - 11)</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Deuda Bruta / Deuda Total</div>
+                        <div class="glosario-card-def">La suma total de todas las obligaciones acumuladas que devengan intereses (facilidades de crédito, bonos, corporativos, corto y largo plazo). Representa el peso financiado institucionalmente.</div>
+                        <div class="glosario-card-formula"><i data-lucide="plus" width="16" height="16"></i> Préstamos Corto Plazo + Préstamos Largo Plazo</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Deuda Neta</div>
+                        <div class="glosario-card-def">El verdadero nivel de endeudamiento exigible tomando en cuenta el "colchón" de efectivo puro que la empresa podría usar instantáneamente para amortizar al banco de inmediato.</div>
+                        <div class="glosario-card-formula"><i data-lucide="minus" width="16" height="16"></i> Deuda Bruta - Saldo de Tesorería (Efectivo/Bancos)</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Deuda Subordinada</div>
+                        <div class="glosario-card-def">Pasivos que, ante escenarios críticos de liquidación de activos, tienen menor prioridad legal de pago que la deuda principal bancaria comercial. Sirve usualmente para financiar a riesgo y rebalancear la ecuación patrimonial.</div>
+                        <div class="glosario-card-formula"><i data-lucide="dollar-sign" width="16" height="16"></i> Pasivos Subordinados Intercompañía / Socios</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Capacidad de Pago</div>
+                        <div class="glosario-card-def">Refleja la solvencia integral. Cuanta cobertura en fondos líquidos o semi-líquidos posee la estructura organizacional para soportar todas las obligaciones financieras vigentes de crédito bancario.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> (Efectivo + Ingresos a recibir) / Obligaciones Totales</div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Categoría 3: Ciclo Operativo -->
+            <details class="glosario-cat">
+                <summary>
+                    <span style="display: flex; align-items: center;"><i data-lucide="refresh-cw" class="card-icon"></i> Ciclo Operativo y Capital de Trabajo</span>
+                    <i data-lucide="chevron-down"></i>
+                </summary>
+                <div class="glosario-grid">
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Ciclo de Conversión de Efectivo (CCC)</div>
+                        <div class="glosario-card-def">Mide en días cuánto se tarda el inventario total comprado en convertirse en 1 peso bancario cobrado. Mientras mayor sea este lapso de días, la empresa tendrá un "hueco natural" que financiar con caja quemada.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> DSO + DIO - DPO</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">DSO (Días de Cobro)</div>
+                        <div class="glosario-card-def">Days Sales Outstanding. El tiempo vital que la empresa espera para recibir en caja facturas de crédito de clientes. Crecidas en este nivel estresan el oxígeno para seguir generando la materia.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calendar" width="16" height="16"></i> (Cuentas por Cobrar / Ventas LTM) * 365</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">DIO (Días de Inventario)</div>
+                        <div class="glosario-card-def">Days Inventory Outstanding. Tiempo que descansa la materia prima o el producto terminado en las naves antes de lograr una salida. DIOs muy extensos alertan el riesgo de daño u obsolescencias.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calendar" width="16" height="16"></i> (Inventarios / Costo de Ventas LTM) * 365</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">DPO (Días de Pago)</div>
+                        <div class="glosario-card-def">Days Payable Outstanding. Tiempo en que se retienen las partidas de los suplidores. Retrasar artificialmente esto engorda el efectivo interinamente (crédito natural) pero atenta la reputación corporativa comercial.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calendar" width="16" height="16"></i> (Cuentas por Pagar / Costo de Ventas LTM) * 365</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Capital de Trabajo Neto</div>
+                        <div class="glosario-card-def">Representa el "lubricante" del motor. Dinero con el que empuja el día a día después de cumplir con deudas urgentes inminentes en meses próximos (corto plazo). El crecimiento agresivo debe venir con subidas atadas orgánicas en este colchón.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> Activos Corrientes - Pasivos Corrientes</div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Categoría 4: Análisis Complementario (Cash Flow, CAPEX, P&L) -->
+            <details class="glosario-cat">
+                <summary>
+                    <span style="display: flex; align-items: center;"><i data-lucide="bar-chart-3" class="card-icon"></i> Cash Flow y Arquitectura P&L</span>
+                    <i data-lucide="chevron-down"></i>
+                </summary>
+                <div class="glosario-grid">
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Flujo de Caja Neto (Disponibilidad)</div>
+                        <div class="glosario-card-def">A diferencia del Beneficio Neto que vive de la matemática contable abstracta, esto es Cash is King. Cuantifica los USD/RD líquidos que cruzaron la puerta del banco neto al cierre del mes sin importar devengues, provisiones e intangibles ilusorios.</div>
+                        <div class="glosario-card-formula"><i data-lucide="banknote" width="16" height="16"></i> F. Operativo + F. Inversión + F. Financiación</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Saldo Final de Caja</div>
+                        <div class="glosario-card-def">Es el balance absoluto de la tesorería al corte del ejercicio analizado. Sirve para entender con cuantos fondos la entidad comenzará su primer día de operación real en la nueva apertura mensual o anual asumiendo todo cobrado/pagado inmediato.</div>
+                        <div class="glosario-card-formula"><i data-lucide="wallet" width="16" height="16"></i> Caja Inicial + Flujo de Caja Neto de Periodo</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">CAPEX (Capital Expenditures)</div>
+                        <div class="glosario-card-def">Desembolsos profundos orientados a expandir radicalmente el volumen de operación orgánico de la empresa a largo plazo: plantas de manufactura, software madre corporativo (ERP) o lotes inmensos mobiliarios.</div>
+                        <div class="glosario-card-formula"><i data-lucide=" बिल्डिंग" width="16" height="16"></i> Adquisición Inversiones Fijas / Activos Fijos</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">OPEX (Operating Expenses)</div>
+                        <div class="glosario-card-def">El importe de prender el botón "On" cada lunes. Aquí se concentran honorarios directivos, tecnología vital interina, nómina comercial, mercadeo local de mantenimiento. Sin relación a cuánto produzco, igual hay costo estático asumiendo estas partidas permanentes.</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> Gastos Ventas + Admins. + Logística</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Costo de Ventas (COGS)</div>
+                        <div class="glosario-card-def">Costo Directo para manufacturar o brindar un bien final materializado e integral hacia venta masiva. Únicamente insumos tangibles iniciales crudos (polímeros, metales, madera estructural). O nómina pura manufacturera directa sin mezcla del supervisor general que vigile otras variables.</div>
+                        <div class="glosario-card-formula"><i data-lucide="box" width="16" height="16"></i> Inv. Inicial + Compras Manufactura - Inv. Final</div>
+                    </div>
+                    <div class="glosario-card">
+                        <div class="glosario-card-title">Integridad del P&L (Brecha de Cuadre)</div>
+                        <div class="glosario-card-def">Prueba de ácido de salud del ETL / DataLake interno automatizado que el Motor AI Financial procesa. Analiza si existió error del cargado de excel o mapeo manual previo (Ventas restadas por Costos - Opex debería casar obligatoriamente la cifra EBITDA inyectada directa).</div>
+                        <div class="glosario-card-formula"><i data-lucide="calculator" width="16" height="16"></i> Ingresos - Costos - OPEX - EBITDA = 0</div>
+                    </div>
+                </div>
+            </details>
+
+        </div>
